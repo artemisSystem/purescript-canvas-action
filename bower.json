@@ -1,0 +1,31 @@
+{
+  "name": "purescript-canvas-action",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-prelude": "^4.1.1",
+    "purescript-effect": "^2.0.1",
+    "purescript-canvas": "^4.0.0",
+    "purescript-colors": "^5.0.0",
+    "purescript-free": "^5.2.0",
+    "purescript-partial": "^2.0.1",
+    "purescript-web-html": "^2.3.0",
+    "purescript-polymorphic-vectors": "^1.0.1",
+    "purescript-maybe": "^4.0.1",
+    "purescript-tuples": "^5.1.0",
+    "purescript-newtype": "^3.0.0",
+    "purescript-exceptions": "^4.0.0",
+    "purescript-foldable-traversable": "^4.1.1",
+    "purescript-transformers": "^4.2.0",
+    "purescript-lists": "^5.4.1",
+    "purescript-math": "^2.1.1"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^4.0.0",
+    "purescript-console": "^4.2.0"
+  }
+}
