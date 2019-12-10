@@ -1,6 +1,10 @@
 {
   "name": "purescript-canvas-action",
   "license": "MIT",
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/3ddyy/purescript-canvas-action.git"
+  },
   "ignore": [
     "**/.*",
     "node_modules",
