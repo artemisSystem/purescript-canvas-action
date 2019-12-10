@@ -1,5 +1,6 @@
 {
   "name": "purescript-canvas-action",
+  "license": "MIT",
   "ignore": [
     "**/.*",
     "node_modules",
