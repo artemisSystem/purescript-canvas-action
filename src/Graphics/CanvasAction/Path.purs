@@ -1,32 +1,31 @@
-{- |
-This module defines a free monad for working with canvas paths in a more
-pleasant way. Make your paths by combining `lineTo`, `moveTo`, `arc`, `rect`,
-`quadraticCurveTo`, `bezierCurveTo`, and `closePath` using `<>` or `bind`
-(`do` notation), and use them with `fillPath`, `fillPathWith`, `strokePath`,
-`strokePathWith`, and `clip`.
+-- | This module defines a free monad for working with canvas paths in a more
+-- | pleasant way. Make your paths by combining `lineTo`, `moveTo`, `arc`,
+-- | `rect`, `quadraticCurveTo`, `bezierCurveTo`, and `closePath` using `<>` or
+-- | `bind` (`do` notation), and use them with `fillPath`, `fillPathWith`,
+-- | `strokePath`, `strokePathWith`, and `clip`.
+-- |
+-- | Example:
+-- | ```purescript
+-- | action :: CanvasAction
+-- | action = fillPathWith "red" path
+-- |
+-- | path :: Path
+-- | path = do
+-- |   moveTo (100.0 >< 100.0)
+-- |   lineTo (200.0 >< 10.0)
+-- |   lineTo (10.0 >< 100.0)
+-- |   closePath
+-- |   polygon
+-- |     [ 0.0 >< 0.0
+-- |     , 20.0 >< 200.0
+-- |     , 100.0 >< 175.0
+-- |     , 30.0 >< 150.0
+-- |     ]
+-- |   circle (100.0 >< 100.0) 50.0
+-- | ```
+-- | `action` is a `CanvasAction` that can be run in `Effect` with `runAction`
+-- | from `Graphics.CanvasAction`.
 
-Example:
-```purescript
-action :: CanvasAction
-action = fillPathWith "red" path
-
-path :: Path
-path = do
-  moveTo (100.0 >< 100.0)
-  lineTo (200.0 >< 10.0)
-  lineTo (10.0 >< 100.0)
-  closePath
-  polygon
-    [ 0.0 >< 0.0
-    , 20.0 >< 200.0
-    , 100.0 >< 175.0
-    , 30.0 >< 150.0
-    ]
-  circle (100.0 >< 100.0) 50.0
-```
-`action` is a `CanvasAction` that can be run in `Effect` with `runAction` from
-`Graphics.CanvasAction`.
--}
 module Graphics.CanvasAction.Path
   ( PathF
   , PathM

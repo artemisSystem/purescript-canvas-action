@@ -1,12 +1,11 @@
-{- |
-This module defines a free monad for working with canvas transformations in a
-more pleasant way. Construct transforms with the various functions, like
-`translate`, `scale` and `fullMatrix`. There are also alternate functions
-(denoted by a `'`), which take the dedicated data type for that transform,
-instead of `Number`s, as arguments. Perform a transform with `runTransform`, or
-use `transformed` to also reset the transformation matrix to its previous value
-afterwards.
--}
+-- | This module defines a free monad for working with canvas transformations in
+-- | a more pleasant way. Construct transforms with the various functions, like
+-- | `translate`, `scale` and `fullMatrix`. There are also alternate functions
+-- | (denoted by a `'`), which take the dedicated data type for that transform,
+-- | instead of `Number`s, as arguments. Perform a transform with
+-- | `runTransform`, or use `transformed` to also reset the transformation
+-- | matrix to its previous value afterwards.
+
 module Graphics.CanvasAction.Transformation
   ( TransformationF
   , TransformationM

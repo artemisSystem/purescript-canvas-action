@@ -1,13 +1,12 @@
-{- |
-This module defines all functions from `Graphics.Canvas` (and some extra) as
-functions without the `Context2D` parameter, and in the `CanvasActionM` monad
-instead of the `Effect` monad. This is to make canvas actions easily composable
-without having to worry about passing the `Context2D` to every single function.
-They can be composed using `do` notation / bind or applicative composition
-(`<*>`, `<*`, and `*>`). Semigroup composition (`<>`) also works if the return
-types are the same and also a `Semigroup` (this includes `Unit`). It also has a
-`MonadRec` instance.
--}
+-- | This module defines all functions from `Graphics.Canvas` (and some extra)
+-- | as functions without the `Context2D` parameter, and in the `CanvasActionM`
+-- | monad instead of the `Effect` monad. This is to make canvas actions easily
+-- | composable without having to worry about passing the `Context2D` to every
+-- | single function. They can be composed using `do` notation / bind or
+-- | applicative composition (`<*>`, `<*`, and `*>`). Semigroup composition
+-- | (`<>`) also works if the return types are the same and also a `Semigroup`
+-- | (this includes `Unit`). It also has a `MonadRec` instance.
+
 module Graphics.CanvasAction
   ( SkewTransform
   , FullMatrixTransform
