@@ -340,28 +340,28 @@ runAction ctx (ReaderT action) = action ctx
 runAction' :: forall a. Context2D -> CanvasActionM a -> CanvasActionM a
 runAction' ctx action = noCtx $ runAction ctx action
 
-{- |
-Run a `CanvasActionM` in the `CanvasActionM` monad, on a created canvas with
-the provided size. This can be useful for creating patterns for use as a
-fillStyle or strokeStyle.
-
-For example:
-
-```purescript
-action :: CanvasAction
-action = do
-  pattern <- runActionOffscreen (20.0 >< 20.0) do
-    filled "#aaf" fillRectFull
-    filled "#afa" $ fillRect (makeRect 0.0 10.0 10.0 10.0)
-    filled "#faa" $ fillRect (makeRect 10.0 0.0 10.0 10.0)
-    imageSource >>= flip createPattern Repeat
-  fillPathWith pattern do
-    circle (200.0 >< 200.0) 175.0
-    circle ( 50.0 ><  50.0)  50.0
-    circle ( 50.0 >< 350.0)  50.0
-    circle (350.0 ><  50.0)  50.0
-    circle (350.0 >< 350.0)  50.0
-```
+{-
+| Run a `CanvasActionM` in the `CanvasActionM` monad, on a created canvas with
+| the provided size. This can be useful for creating patterns for use as a
+| fillStyle or strokeStyle.
+| 
+| For example:
+| 
+| ```purescript
+| action :: CanvasAction
+| action = do
+|   pattern <- runActionOffscreen (20.0 >< 20.0) do
+|     filled "#aaf" fillRectFull
+|     filled "#afa" $ fillRect (makeRect 0.0 10.0 10.0 10.0)
+|     filled "#faa" $ fillRect (makeRect 10.0 0.0 10.0 10.0)
+|     imageSource >>= flip createPattern Repeat
+|   fillPathWith pattern do
+|     circle (200.0 >< 200.0) 175.0
+|     circle ( 50.0 ><  50.0)  50.0
+|     circle ( 50.0 >< 350.0)  50.0
+|     circle (350.0 ><  50.0)  50.0
+|     circle (350.0 >< 350.0)  50.0
+| ```
 -}
 runActionOffscreen
   :: forall a s. ToSize Number s => s -> CanvasActionM a -> CanvasActionM a
