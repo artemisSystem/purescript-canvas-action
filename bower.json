@@ -1,36 +1,36 @@
 {
-  "name": "purescript-canvas-action",
-  "license": "MIT",
-  "repository": {
-      "type": "git",
-      "url": "https://github.com/3ddyy/purescript-canvas-action.git"
-  },
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "output"
-  ],
-  "dependencies": {
-    "purescript-prelude": "^4.1.1",
-    "purescript-effect": "^2.0.1",
-    "purescript-canvas": "^4.0.0",
-    "purescript-colors": "^5.0.0",
-    "purescript-free": "^5.2.0",
-    "purescript-partial": "^2.0.1",
-    "purescript-web-html": "^2.3.0",
-    "purescript-polymorphic-vectors": "^1.0.1",
-    "purescript-maybe": "^4.0.1",
-    "purescript-tuples": "^5.1.0",
-    "purescript-newtype": "^3.0.0",
-    "purescript-exceptions": "^4.0.0",
-    "purescript-foldable-traversable": "^4.1.1",
-    "purescript-transformers": "^4.2.0",
-    "purescript-lists": "^5.4.1",
-    "purescript-math": "^2.1.1"
-  },
-  "devDependencies": {
-    "purescript-psci-support": "^4.0.0",
-    "purescript-console": "^4.2.0"
-  }
+    "name": "purescript-canvas-action",
+    "license": [
+        "MIT"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/3ddyy/purescript-canvas-action.git"
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "output"
+    ],
+    "dependencies": {
+        "purescript-canvas": "^v4.0.0",
+        "purescript-colors": "^v5.0.0",
+        "purescript-console": "^v4.4.0",
+        "purescript-effect": "^v2.0.1",
+        "purescript-exceptions": "^v4.0.0",
+        "purescript-foldable-traversable": "^v4.1.1",
+        "purescript-free": "^v5.2.0",
+        "purescript-lists": "^v5.4.1",
+        "purescript-math": "^v2.1.1",
+        "purescript-maybe": "^v4.0.1",
+        "purescript-newtype": "^v3.0.0",
+        "purescript-partial": "^v2.0.1",
+        "purescript-polymorphic-vectors": "^v1.1.1",
+        "purescript-prelude": "^v4.1.1",
+        "purescript-psci-support": "^v4.0.0",
+        "purescript-transformers": "^v4.2.0",
+        "purescript-tuples": "^v5.1.0",
+        "purescript-web-html": "^v2.3.0"
+    }
 }
