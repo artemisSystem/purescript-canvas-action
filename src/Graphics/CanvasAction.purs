@@ -41,7 +41,6 @@ module Graphics.CanvasAction
   , runActionOffscreen
   , runActionOffscreen'
 
-  , noCtx
   , withCtx
   , withCtx1
   , withCtx2
@@ -154,7 +153,7 @@ module Graphics.CanvasAction
   , restore
   , restoreAfter
 
-  , module Export
+  , module Exports
   ) where
 
 import Prelude
@@ -168,7 +167,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Exception.Unsafe (unsafeThrow)
-import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite(..), Context2D, Dimensions, ImageData, LineCap(..), LineJoin(..), LinearGradient, PatternRepeat(..), QuadraticCurve, RadialGradient, ScaleTransform, TextAlign(..), TextMetrics, TranslateTransform, imageDataBuffer, imageDataHeight, imageDataWidth) as Export
+import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite(..), Context2D, Dimensions, ImageData, LineCap(..), LineJoin(..), LinearGradient, PatternRepeat(..), QuadraticCurve, RadialGradient, ScaleTransform, TextAlign(..), TextMetrics, TranslateTransform, imageDataBuffer, imageDataHeight, imageDataWidth) as Exports
 import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite, Context2D, Dimensions, ImageData, LineCap, LineJoin, LinearGradient, PatternRepeat, QuadraticCurve, RadialGradient, ScaleTransform, TextAlign, TextMetrics, TranslateTransform)
 import Graphics.Canvas as C
 import Data.Vector.Polymorphic (Rect(..), Vector2, midPos, toRectangle, (><))
@@ -308,18 +307,18 @@ createCanvasEffect s = do
 -- | create the canvas with
 createCanvas'
   :: forall s. ToSize Number s => Document -> s -> CanvasActionM CanvasElement
-createCanvas' doc s = noCtx $ createCanvasEffect' doc s
+createCanvas' doc s = liftEffect $ createCanvasEffect' doc s
 
 -- | Create a `CanvasElement` of the given size in the `CanvasActionM` monad
 createCanvas :: forall s. ToSize Number s => s -> CanvasActionM CanvasElement
-createCanvas s = noCtx $ createCanvasEffect s
+createCanvas s = liftEffect $ createCanvasEffect s
 
 
 getCanvasElementById :: String -> CanvasActionM (Maybe CanvasElement)
-getCanvasElementById = noCtx <<< C.getCanvasElementById
+getCanvasElementById = liftEffect <<< C.getCanvasElementById
 
 getContext2D :: CanvasElement -> CanvasActionM Context2D
-getContext2D = noCtx <<< C.getContext2D
+getContext2D = liftEffect <<< C.getContext2D
 
 -- | The `CanvasActionM` monad is a monad transformer stack, more specifically
 -- | the `ReaderT` monad transformer applied to the `Effect` monad, reading a 
@@ -338,7 +337,7 @@ runAction ctx (ReaderT action) = action ctx
 -- | the action was run on. This can be useful for caching drawings on offscreen
 -- | canvases, to later draw them to the "main" canvas.
 runAction' :: forall a. Context2D -> CanvasActionM a -> CanvasActionM a
-runAction' ctx action = noCtx $ runAction ctx action
+runAction' ctx action = liftEffect $ runAction ctx action
 
 {-
 | Run a `CanvasActionM` in the `CanvasActionM` monad, on a created canvas with
@@ -377,14 +376,6 @@ runActionOffscreen' :: forall a. CanvasActionM a -> CanvasActionM a
 runActionOffscreen' action = do
   (size :: Vector2 Number) <- getDimensions <#> dimensionsToSize
   runActionOffscreen size action
-
--- | Convenience function used for constructing various primitive
--- | `CanvasActionM`s in this package. This function is exported so that anyone
--- | can make their own primitives, but if you just want to run an `Effect` in
--- | `CanvasActionM` (for example in a do block) once, use `liftEffect` from
--- | `Effect.Class`.
-noCtx :: Effect ~> CanvasActionM
-noCtx = liftEffect
 
 -- | Convenience function for constructing `CanvasActionM`s from
 -- | `Graphics.Canvas`-style functions with no arguments apart from the
@@ -808,7 +799,7 @@ addColorStop
   :: forall r
    . CanvasColorRep r
   => CanvasGradient -> Number -> r -> CanvasAction
-addColorStop grad n col = noCtx $ C.addColorStop grad n (toColor col)
+addColorStop grad n col = liftEffect $ C.addColorStop grad n (toColor col)
 
 linearGradient
   :: forall r f
