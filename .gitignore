@@ -8,3 +8,4 @@
 /.purs*
 /.psa*
 /test/index.js
+/.spago
