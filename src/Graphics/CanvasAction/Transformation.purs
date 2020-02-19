@@ -70,9 +70,9 @@ skew' s = liftF $ Skew s unit
 skew :: Number -> Number -> Transformation
 skew skewX skewY = skew' { skewX, skewY }
 
--- | Construct a `Transformation` from a `Number` representing degrees rotated
+-- | Construct a `Transformation` from a `Number` representing radians rotated
 rotate :: Number -> Transformation
-rotate deg = liftF $ Rotate deg unit
+rotate rad = liftF $ Rotate rad unit
 
 -- | Construct a `Transformation` from a `FullMatrixTransform`
 fullMatrix' :: FullMatrixTransform -> Transformation
