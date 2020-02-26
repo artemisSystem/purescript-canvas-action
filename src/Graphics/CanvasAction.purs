@@ -34,8 +34,6 @@ module Graphics.CanvasAction
   , getCanvasElementById
   , getContext2D
 
-  , CanvasActionM
-  , CanvasAction
   , runAction
   , runAction'
   , runActionOffscreen
@@ -167,8 +165,12 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Exception.Unsafe (unsafeThrow)
-import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite(..), Context2D, Dimensions, ImageData, LineCap(..), LineJoin(..), LinearGradient, PatternRepeat(..), QuadraticCurve, RadialGradient, ScaleTransform, TextAlign(..), TextMetrics, TranslateTransform, imageDataBuffer, imageDataHeight, imageDataWidth) as Exports
 import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite, Context2D, Dimensions, ImageData, LineCap, LineJoin, LinearGradient, PatternRepeat, QuadraticCurve, RadialGradient, ScaleTransform, TextAlign, TextMetrics, TranslateTransform)
+import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite(..), Context2D, Dimensions, ImageData, LineCap(..), LineJoin(..), LinearGradient, PatternRepeat(..), QuadraticCurve, RadialGradient, ScaleTransform, TextAlign(..), TextMetrics, TranslateTransform, imageDataBuffer, imageDataHeight, imageDataWidth) as Exports
+import Graphics.CanvasAction.Class (class MonadCanvasAction, liftCanvasAction)
+import Graphics.CanvasAction.Class (class MonadCanvasAction, liftCanvasAction) as Exports
+import Graphics.CanvasAction.Types (CanvasAction, CanvasActionM)
+import Graphics.CanvasAction.Types (CanvasAction, CanvasActionM) as Exports
 import Graphics.Canvas as C
 import Data.Vector.Polymorphic (Rect(..), Vector2, midPos, toRectangle, (><))
 import Data.Vector.Polymorphic.Class (class FromSize, class ToPos, class ToRegion, class ToSize, fromSize, toPos, toRegion, toSize)
@@ -306,37 +308,39 @@ createCanvasEffect s = do
 -- | Same as `createCanvas`, but allows for specifying the `Document` object to
 -- | create the canvas with
 createCanvas'
-  :: forall s. ToSize Number s => Document -> s -> CanvasActionM CanvasElement
+  :: forall m s
+   . MonadCanvasAction m => ToSize Number s
+  => Document -> s -> m CanvasElement
 createCanvas' doc s = liftEffect $ createCanvasEffect' doc s
 
--- | Create a `CanvasElement` of the given size in the `CanvasActionM` monad
-createCanvas :: forall s. ToSize Number s => s -> CanvasActionM CanvasElement
+-- | Create a `CanvasElement` of the given size in any `MonadCanvasAction`
+createCanvas
+  :: forall m s . MonadCanvasAction m => ToSize Number s => s -> m CanvasElement
 createCanvas s = liftEffect $ createCanvasEffect s
 
 
-getCanvasElementById :: String -> CanvasActionM (Maybe CanvasElement)
+getCanvasElementById
+  :: forall m
+   . MonadCanvasAction m
+  => String -> m (Maybe CanvasElement)
 getCanvasElementById = liftEffect <<< C.getCanvasElementById
 
-getContext2D :: CanvasElement -> CanvasActionM Context2D
+getContext2D :: forall m. MonadCanvasAction m => CanvasElement -> m Context2D
 getContext2D = liftEffect <<< C.getContext2D
 
--- | The `CanvasActionM` monad is a monad transformer stack, more specifically
--- | the `ReaderT` monad transformer applied to the `Effect` monad, reading a 
--- | value of type `Context2D`.
-type CanvasActionM = ReaderT Context2D Effect
-
--- | Type synonym for a `CanvasActionM` without a result, as it's very common
-type CanvasAction = CanvasActionM Unit
 
 -- | Run a `CanvasActionM` in the `Effect` monad, on the provided `Context2D`
 runAction :: forall a. Context2D -> CanvasActionM a -> Effect a
 runAction ctx (ReaderT action) = action ctx
 
--- | Run a `CanvasActionM` in the `CanvasActionM` monad, on the provided
+-- | Run a `CanvasActionM` in a `MonadCanvasAction`, on the provided
 -- | `Context2D`. In essence, this allows drawing to a different canvas than
 -- | the action was run on. This can be useful for caching drawings on offscreen
 -- | canvases, to later draw them to the "main" canvas.
-runAction' :: forall a. Context2D -> CanvasActionM a -> CanvasActionM a
+runAction'
+  :: forall m a
+   . MonadCanvasAction m
+  => Context2D -> CanvasActionM a -> m a
 runAction' ctx action = liftEffect $ runAction ctx action
 
 {-
@@ -363,7 +367,9 @@ runAction' ctx action = liftEffect $ runAction ctx action
 | ```
 -}
 runActionOffscreen
-  :: forall a s. ToSize Number s => s -> CanvasActionM a -> CanvasActionM a
+  :: forall m a s
+   . MonadCanvasAction m
+  => ToSize Number s => s -> CanvasActionM a -> m a
 runActionOffscreen size action = do
   ctx <- createCanvas size >>= getContext2D
   runAction' ctx action
@@ -372,93 +378,105 @@ runActionOffscreen size action = do
 -- | with the same size as the "main" canvas. This can be useful for creating
 -- | patterns for use as a fillStyle or strokeStyle. See `runActionOffscreen`
 -- | for an example.
-runActionOffscreen' :: forall a. CanvasActionM a -> CanvasActionM a
+runActionOffscreen' :: forall m a. MonadCanvasAction m => CanvasActionM a -> m a
 runActionOffscreen' action = do
   (size :: Vector2 Number) <- getDimensions <#> dimensionsToSize
+    # liftCanvasAction
   runActionOffscreen size action
 
 -- | Convenience function for constructing `CanvasActionM`s from
 -- | `Graphics.Canvas`-style functions with no arguments apart from the
 -- | `Context2D`.
-withCtx :: forall a. (Context2D -> Effect a) -> CanvasActionM a
-withCtx = wrap
+withCtx :: forall m a . MonadCanvasAction m => (Context2D -> Effect a) -> m a
+withCtx = liftCanvasAction <<< wrap
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with one argument apart from the
 -- | `Context2D`.
-withCtx1 :: forall a b. (Context2D -> a -> Effect b) -> (a -> CanvasActionM b)
+withCtx1
+  :: forall m a b
+   . MonadCanvasAction m
+  => (Context2D -> a -> Effect b) -> (a -> m b)
 withCtx1 action a = withCtx \ctx -> action ctx a
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with two arguments apart from the
 -- | `Context2D`.
 withCtx2
-  :: forall a b c
-   . (Context2D -> a -> b -> Effect c)
-  -> (a -> b -> CanvasActionM c)
+  :: forall m a b c
+   . MonadCanvasAction m
+  => (Context2D -> a -> b -> Effect c)
+  -> (a -> b -> m c)
 withCtx2 action a b = withCtx \ctx -> action ctx a b
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with three arguments apart from the
 -- | `Context2D`.
 withCtx3
-  :: forall a b c d
-   . (Context2D -> a -> b -> c -> Effect d)
-  -> (a -> b -> c -> CanvasActionM d)
+  :: forall m a b c d
+   . MonadCanvasAction m
+  => (Context2D -> a -> b -> c -> Effect d)
+  -> (a -> b -> c -> m d)
 withCtx3 action a b c = withCtx \ctx -> action ctx a b c
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with four arguments apart from the
 -- | `Context2D`.
 withCtx4
-  :: forall a b c d e
-   . (Context2D -> a -> b -> c -> d -> Effect e)
-  -> (a -> b -> c -> d -> CanvasActionM e)
+  :: forall m a b c d e
+   . MonadCanvasAction m
+  => (Context2D -> a -> b -> c -> d -> Effect e)
+  -> (a -> b -> c -> d -> m e)
 withCtx4 action a b c d = withCtx \ctx -> action ctx a b c d
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with five arguments apart from the
 -- | `Context2D`.
 withCtx5
-  :: forall a b c d e f
-   . (Context2D -> a -> b -> c -> d -> e -> Effect f)
-  -> (a -> b -> c -> d -> e -> CanvasActionM f)
+  :: forall m a b c d e f
+   . MonadCanvasAction m
+  => (Context2D -> a -> b -> c -> d -> e -> Effect f)
+  -> (a -> b -> c -> d -> e -> m f)
 withCtx5 action a b c d e = withCtx \ctx -> action ctx a b c d e
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with six arguments apart from the
 -- | `Context2D`.
 withCtx6
-  :: forall a b c d e f g
-   . (Context2D -> a -> b -> c -> d -> e -> f -> Effect g)
-  -> (a -> b -> c -> d -> e -> f -> CanvasActionM g)
+  :: forall m a b c d e f g
+   . MonadCanvasAction m
+  => (Context2D -> a -> b -> c -> d -> e -> f -> Effect g)
+  -> (a -> b -> c -> d -> e -> f -> m g)
 withCtx6 action a b c d e f = withCtx \ctx -> action ctx a b c d e f
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with seven arguments apart from the
 -- | `Context2D`.
 withCtx7
-  :: forall a b c d e f g h
-   . (Context2D -> a -> b -> c -> d -> e -> f -> g -> Effect h)
-  -> (a -> b -> c -> d -> e -> f -> g -> CanvasActionM h)
+  :: forall m a b c d e f g h
+   . MonadCanvasAction m
+  => (Context2D -> a -> b -> c -> d -> e -> f -> g -> Effect h)
+  -> (a -> b -> c -> d -> e -> f -> g -> m h)
 withCtx7 action a b c d e f g = withCtx \ctx -> action ctx a b c d e f g
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with eight arguments apart from the
 -- | `Context2D`.
 withCtx8
-  :: forall a b c d e f g h i
-   . (Context2D -> a -> b -> c -> d -> e -> f -> g -> h -> Effect i)
-  -> (a -> b -> c -> d -> e -> f -> g -> h -> CanvasActionM i)
+  :: forall m a b c d e f g h i
+   . MonadCanvasAction m
+  => (Context2D -> a -> b -> c -> d -> e -> f -> g -> h -> Effect i)
+  -> (a -> b -> c -> d -> e -> f -> g -> h -> m i)
 withCtx8 action a b c d e f g h = withCtx \ctx -> action ctx a b c d e f g h
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with nine arguments apart from the
 -- | `Context2D`.
 withCtx9
-  :: forall a b c d e f g h i j
-   . (Context2D -> a -> b -> c -> d -> e -> f -> g -> h -> i -> Effect j)
-  -> (a -> b -> c -> d -> e -> f -> g -> h -> i -> CanvasActionM j)
+  :: forall m a b c d e f g h i j
+   . MonadCanvasAction m
+  => (Context2D -> a -> b -> c -> d -> e -> f -> g -> h -> i -> Effect j)
+  -> (a -> b -> c -> d -> e -> f -> g -> h -> i -> m j)
 withCtx9 action a b c d e f g h i = withCtx \ctx -> action ctx a b c d e f g h i
 
 -- | From a function taking some region and returning a `CanvasActionM`, make
@@ -466,20 +484,22 @@ withCtx9 action a b c d e f g h i = withCtx \ctx -> action ctx a b c d e f g h i
 -- | as the region. This can for example be used to draw an image scaled to fill
 -- | the entire canvas: `withFull \r -> drawImageScale r image`
 withFull
-  :: forall a
-   . (forall r. ToRegion Number r => r -> CanvasActionM a)
-  -> CanvasActionM a
-withFull action = (getDimensions <#> dimsToVector2) >>= action
+  :: forall m a
+   . MonadCanvasAction m
+  => (forall r. ToRegion Number r => r -> m a)
+  -> m a
+withFull action = liftCanvasAction (getDimensions <#> dimsToVector2) >>= action
   where dimsToVector2 = dimensionsToSize :: Dimensions -> Vector2 Number
 
 -- | From a function taking some position and returning a `CanvasActionM`, make
 -- | a `CanvasActionM` that calls the original function with the center of the
 -- | canvas as a position.
 withMidPos
-  :: forall a
-   . (forall p. ToPos Number p => p -> CanvasActionM a)
-  -> CanvasActionM a
-withMidPos action = (getDimensions <#> midPos') >>= action
+  :: forall m a
+   . MonadCanvasAction m
+  => (forall p. ToPos Number p => p -> m a)
+  -> m a
+withMidPos action = liftCanvasAction (getDimensions <#> midPos') >>= action
   where
     dimsToVector2 = dimensionsToSize :: Dimensions -> Vector2 Number
     midPos' = dimsToVector2 >>> midPos :: Dimensions -> Vector2 Number
@@ -488,91 +508,100 @@ withMidPos action = (getDimensions <#> midPos') >>= action
 foreign import getCanvasEffect :: Context2D -> Effect CanvasElement
 
 -- | Get the canvas as a `CanvasActionM`
-getCanvas :: CanvasActionM CanvasElement
+getCanvas :: forall m. MonadCanvasAction m => m CanvasElement
 getCanvas = withCtx getCanvasEffect
 
 -- | Convenience function for constructing `CanvasActionM`s from
 -- | `Graphics.Canvas`-style functions with no arguments apart from the
 -- | `CanvasElement`.
-withCanvas :: forall a. (CanvasElement -> Effect a) -> CanvasActionM a
+withCanvas
+  :: forall m a. MonadCanvasAction m => (CanvasElement -> Effect a) -> m a
 withCanvas action = withCtx \ctx -> (getCanvasEffect ctx >>= action)
 
 -- | Convenience function for constructing `CanvasActionM`s from
 -- | `Graphics.Canvas`-style functions with one argument apart from the
 -- | `CanvasElement`.
 withCanvas1
-  :: forall a b
-   . (CanvasElement -> a -> Effect b)
-  -> (a -> CanvasActionM b)
+  :: forall m a b
+   . MonadCanvasAction m
+  => (CanvasElement -> a -> Effect b)
+  -> (a -> m b)
 withCanvas1 action a = withCanvas \canv -> action canv a
 
 -- | Convenience function for constructing `CanvasActionM`s from
 -- | `Graphics.Canvas`-style functions with two arguments apart from the
 -- | `CanvasElement`.
 withCanvas2
-  :: forall a b c
-   . (CanvasElement -> a -> b -> Effect c)
-  -> (a -> b -> CanvasActionM c)
+  :: forall m a b c
+   . MonadCanvasAction m
+  => (CanvasElement -> a -> b -> Effect c)
+  -> (a -> b -> m c)
 withCanvas2 action a b = withCanvas \canv -> action canv a b
 
 -- | Convenience function for constructing `CanvasActionM`s from
 -- | `Graphics.Canvas`-style functions with three arguments apart from the
 -- | `CanvasElement`.
 withCanvas3
-  :: forall a b c d
-   . (CanvasElement -> a -> b -> c -> Effect d)
-  -> (a -> b -> c -> CanvasActionM d)
+  :: forall m a b c d
+   . MonadCanvasAction m
+  => (CanvasElement -> a -> b -> c -> Effect d)
+  -> (a -> b -> c -> m d)
 withCanvas3 action a b c = withCanvas \canv -> action canv a b c
 
 -- | Fill a rectangular area
-fillRect :: forall r. ToRegion Number r => r -> CanvasAction
+fillRect :: forall m r. MonadCanvasAction m => ToRegion Number r => r -> m Unit
 fillRect = withCtx1 C.fillRect <<< toRectangle
 
 -- | Fill a rectangular area that covers the entire canvas
-fillRectFull :: CanvasAction
+fillRectFull :: forall m. MonadCanvasAction m => m Unit
 fillRectFull = withFull fillRect
 
 -- | Stroke a rectangular area
-strokeRect :: forall r. ToRegion Number r => r -> CanvasAction
+strokeRect
+  :: forall m r. MonadCanvasAction m => ToRegion Number r => r -> m Unit
 strokeRect = withCtx1 C.strokeRect <<< toRectangle
 
 -- | Stroke a rectangular area that covers the entire canvas
-strokeRectFull :: CanvasAction
+strokeRectFull :: forall m. MonadCanvasAction m => m Unit
 strokeRectFull = withFull strokeRect
 
 -- | Clear a rectangular area
-clearRect :: forall r. ToRegion Number r => r -> CanvasAction
+clearRect :: forall m r. MonadCanvasAction m => ToRegion Number r => r -> m Unit
 clearRect = withCtx1 C.clearRect <<< toRectangle
 
 -- | Clear a rectangular area that covers the entire canvas
-clearRectFull :: CanvasAction
+clearRectFull :: forall m. MonadCanvasAction m => m Unit
 clearRectFull = withFull clearRect
 
 
 foreign import setFillStyleImpl :: Context2D -> CanvasStyle -> Effect Unit
 
-setFillStyle :: forall r. CanvasStyleRep r => r -> CanvasAction
+setFillStyle
+  :: forall m r. MonadCanvasAction m => CanvasStyleRep r => r -> m Unit
 setFillStyle = withCtx1 setFillStyleImpl <<< toStyle
 
 foreign import setStrokeStyleImpl :: Context2D -> CanvasStyle -> Effect Unit
 
-setStrokeStyle :: forall r. CanvasStyleRep r => r -> CanvasAction
+setStrokeStyle
+  :: forall m r. MonadCanvasAction m => CanvasStyleRep r => r -> m Unit
 setStrokeStyle = withCtx1 setStrokeStyleImpl <<< toStyle
 
 foreign import getFillStyleImpl :: Context2D -> Effect CanvasStyle
 
-getFillStyle :: CanvasActionM CanvasStyle
+getFillStyle :: forall m. MonadCanvasAction m => m CanvasStyle
 getFillStyle = withCtx getFillStyleImpl
 
 foreign import getStrokeStyleImpl :: Context2D -> Effect CanvasStyle
 
-getStrokeStyle :: CanvasActionM CanvasStyle
+getStrokeStyle :: forall m. MonadCanvasAction m => m CanvasStyle
 getStrokeStyle = withCtx getStrokeStyleImpl
 
 -- | Run a `CanvasActionM` with the given fillStyle, resetting it to the
 -- | previous value after
 filled
-  :: forall a r. CanvasStyleRep r => r -> CanvasActionM a -> CanvasActionM a
+  :: forall m a r
+   . MonadCanvasAction m => CanvasStyleRep r
+  => r -> m a -> m a
 filled style action = do
   old <- getFillStyle
   setFillStyle style *> action <* setFillStyle old
@@ -580,59 +609,64 @@ filled style action = do
 -- | Run a `CanvasActionM` with the given strokeStyle, resetting it to the
 -- | previous value after
 stroked
-  :: forall a r. CanvasStyleRep r => r -> CanvasActionM a -> CanvasActionM a
+  :: forall m a r
+   . MonadCanvasAction m => CanvasStyleRep r
+  => r -> m a -> m a
 stroked style action = do
   old <- getStrokeStyle
   setStrokeStyle style *> action <* setStrokeStyle old
 
-setLineWidth :: Number -> CanvasAction
+setLineWidth :: forall m. MonadCanvasAction m => Number -> m Unit
 setLineWidth = withCtx1 C.setLineWidth
 
-setLineDash :: Array Number -> CanvasAction
+setLineDash :: forall m. MonadCanvasAction m => Array Number -> m Unit
 setLineDash = withCtx1 C.setLineDash
 
-setShadowBlur :: Number -> CanvasAction
+setShadowBlur :: forall m. MonadCanvasAction m => Number -> m Unit
 setShadowBlur = withCtx1 C.setShadowBlur
 
-setShadowOffsetX :: Number -> CanvasAction
+setShadowOffsetX :: forall m. MonadCanvasAction m => Number -> m Unit
 setShadowOffsetX = withCtx1 C.setShadowOffsetX
 
-setShadowOffsetY :: Number -> CanvasAction
+setShadowOffsetY :: forall m. MonadCanvasAction m => Number -> m Unit
 setShadowOffsetY = withCtx1 C.setShadowOffsetY
 
 -- | Set x and y shadow offset at the same time
-setShadowOffset :: forall p. ToPos Number p => p -> CanvasAction
-setShadowOffset offset = setShadowOffsetX x <> setShadowOffsetY y
+setShadowOffset
+  :: forall m p. MonadCanvasAction m => ToPos Number p => p -> m Unit
+setShadowOffset offset = setShadowOffsetX x *> setShadowOffsetY y
   where (x >< y) = toPos offset
 
-setShadowColor :: forall r. CanvasColorRep r => r -> CanvasAction
+setShadowColor
+  :: forall m r. MonadCanvasAction m => CanvasColorRep r => r -> m Unit
 setShadowColor = withCtx1 C.setShadowColor <<< toColor
 
-setMiterLimit :: Number -> CanvasAction
+setMiterLimit :: forall m. MonadCanvasAction m => Number -> m Unit
 setMiterLimit = withCtx1 C.setMiterLimit
 
-setLineCap :: LineCap -> CanvasAction
+setLineCap :: forall m. MonadCanvasAction m => LineCap -> m Unit
 setLineCap = withCtx1 C.setLineCap
 
-setLineJoin :: LineJoin -> CanvasAction
+setLineJoin :: forall m. MonadCanvasAction m => LineJoin -> m Unit
 setLineJoin = withCtx1 C.setLineJoin
 
-setGlobalCompositeOperation :: Composite -> CanvasAction
+setGlobalCompositeOperation
+  :: forall m. MonadCanvasAction m => Composite -> m Unit
 setGlobalCompositeOperation = withCtx1 C.setGlobalCompositeOperation
 
-setGlobalAlpha :: Number -> CanvasAction
+setGlobalAlpha :: forall m. MonadCanvasAction m => Number -> m Unit
 setGlobalAlpha = withCtx1 C.setGlobalAlpha
 
 
-getTextAlign :: CanvasActionM TextAlign
+getTextAlign :: forall m. MonadCanvasAction m => m TextAlign
 getTextAlign = withCtx C.textAlign
 
-setTextAlign :: TextAlign -> CanvasAction
+setTextAlign :: forall m. MonadCanvasAction m => TextAlign -> m Unit
 setTextAlign = withCtx1 C.setTextAlign
 
 foreign import getTextBaselineImpl :: Context2D -> Effect String
 
-getTextBaseline :: CanvasActionM TextBaseline
+getTextBaseline :: forall m. MonadCanvasAction m => m TextBaseline
 getTextBaseline =
   withCtx \ctx -> unsafeParseBaseline <$> getTextBaselineImpl ctx
     where
@@ -647,7 +681,7 @@ getTextBaseline =
 
 foreign import setTextBaselineImpl :: Context2D -> String -> Effect Unit
 
-setTextBaseline :: TextBaseline -> CanvasAction
+setTextBaseline :: forall m. MonadCanvasAction m => TextBaseline -> m Unit
 setTextBaseline baseline = withCtx1 setTextBaselineImpl (toString baseline)
   where
     toString BaselineTop = "top"
@@ -658,51 +692,54 @@ setTextBaseline baseline = withCtx1 setTextBaselineImpl (toString baseline)
     toString BaselineBottom = "bottom"
 
 
-getFont :: CanvasActionM String
+getFont :: forall m. MonadCanvasAction m => m String
 getFont = withCtx C.font
 
-setFont :: String -> CanvasAction
+setFont :: forall m. MonadCanvasAction m => String -> m Unit
 setFont = withCtx1 C.setFont
 
-fillText :: forall p. ToPos Number p => String -> p -> CanvasAction
+fillText
+  :: forall m p. MonadCanvasAction m => ToPos Number p => String -> p -> m Unit
 fillText text pos = withCtx3 C.fillText text x y
   where (x >< y) = toPos pos
 
-strokeText :: forall p. ToPos Number p => String -> p -> CanvasAction
+strokeText
+  :: forall m p. MonadCanvasAction m => ToPos Number p => String -> p -> m Unit
 strokeText text pos = withCtx3 C.strokeText text x y
   where (x >< y) = toPos pos
 
-measureText :: String -> CanvasActionM TextMetrics
+measureText :: forall m. MonadCanvasAction m => String -> m TextMetrics
 measureText = withCtx1 C.measureText
 
 
 dimensionsToSize :: forall s. FromSize Number s => Dimensions -> s
 dimensionsToSize { width, height } = fromSize (width >< height)
 
-getDimensions :: CanvasActionM Dimensions
+getDimensions :: forall m. MonadCanvasAction m => m Dimensions
 getDimensions = withCanvas C.getCanvasDimensions
 
-setDimensions :: Dimensions -> CanvasAction
+setDimensions :: forall m. MonadCanvasAction m => Dimensions -> m Unit
 setDimensions = withCanvas1 C.setCanvasDimensions
 
-getHeight :: CanvasActionM Number
+getHeight :: forall m. MonadCanvasAction m => m Number
 getHeight = withCanvas C.getCanvasHeight
 
-setHeight :: Number -> CanvasAction
+setHeight :: forall m. MonadCanvasAction m => Number -> m Unit
 setHeight = withCanvas1 C.setCanvasHeight
 
-getWidth :: CanvasActionM Number
+getWidth :: forall m. MonadCanvasAction m => m Number
 getWidth = withCanvas C.getCanvasWidth
 
-setWidth :: Number -> CanvasAction
+setWidth :: forall m. MonadCanvasAction m => Number -> m Unit
 setWidth = withCanvas1 C.setCanvasWidth
 
 -- | Create a data URL for the current canvas contents
-toDataUrl :: CanvasActionM String
+toDataUrl :: forall m. MonadCanvasAction m => m String
 toDataUrl = withCanvas C.canvasToDataURL
 
 
-getImageData :: forall r. ToRegion Number r => r -> CanvasActionM ImageData
+getImageData
+  :: forall m r. MonadCanvasAction m => ToRegion Number r => r -> m ImageData
 getImageData region = withCtx4 C.getImageData x y width height
   where { x, y, width, height } = toRectangle region
 
@@ -710,9 +747,9 @@ getImageData region = withCtx4 C.getImageData x y width height
 -- | the canvas to place the topleft of the data. The second argument (`r`) is
 -- | the region of the `ImageData` to render.
 putImageDataFull
-  :: forall p r
-   . ToPos Number p => ToRegion Number r
-  => p -> r -> ImageData -> CanvasAction
+  :: forall m p r
+   . MonadCanvasAction m => ToPos Number p => ToRegion Number r
+  => p -> r -> ImageData -> m Unit
 putImageDataFull dest dirty img =
   withCtx7 C.putImageDataFull img x y dx dy dw dh
   where (x >< y) = toPos dest
@@ -720,38 +757,46 @@ putImageDataFull dest dirty img =
 
 -- | Render image data on the canvas. The first argument (`p`) is the point on
 -- | the canvas to place the topleft of the data.
-putImageData :: forall p. ToPos Number p => p -> ImageData -> CanvasAction
+putImageData
+  :: forall m p
+   . MonadCanvasAction m => ToPos Number p
+  => p -> ImageData -> m Unit
 putImageData dest img = withCtx3 C.putImageData img x y
   where (x >< y) = toPos dest
 
-createImageData :: forall s. ToSize Number s => s -> CanvasActionM ImageData
+createImageData
+  :: forall m s. MonadCanvasAction m => ToSize Number s => s -> m ImageData
 createImageData size = withCtx2 C.createImageData w h
   where (w >< h) = toSize size
 
-createImageDataCopy :: ImageData -> CanvasActionM ImageData
+createImageDataCopy :: forall m. MonadCanvasAction m => ImageData -> m ImageData
 createImageDataCopy = withCtx1 C.createImageDataCopy
 
 
-imageSource :: CanvasActionM CanvasImageSource
+imageSource :: forall m. MonadCanvasAction m => m CanvasImageSource
 imageSource = withCanvas $ pure <<< C.canvasElementToImageSource
 
 drawImage
-  :: forall p. ToPos Number p => p -> CanvasImageSource -> CanvasAction
+  :: forall m p
+   . MonadCanvasAction m => ToPos Number p
+  => p -> CanvasImageSource -> m Unit
 drawImage pos img = withCtx3 C.drawImage img x y
   where (x >< y) = toPos pos
 
 -- | Draw an image, scaled to fit the provided region
 drawImageScale
-  :: forall r. ToRegion Number r => r -> CanvasImageSource -> CanvasAction
+  :: forall m r
+   . MonadCanvasAction m => ToRegion Number r
+  => r -> CanvasImageSource -> m Unit
 drawImageScale dirty img = withCtx5 C.drawImageScale img x y w h
   where (Rect (x >< y) (w >< h)) = toRegion dirty
 
 -- | Draw an image on the canvas. The first arugment is the region of the image
 -- | to draw, and the second argument is the region to draw it in.
 drawImageFull
-  :: forall r
-   . ToRegion Number r
-  => r -> r -> CanvasImageSource -> CanvasAction
+  :: forall m r
+   . MonadCanvasAction m => ToRegion Number r
+  => r -> r -> CanvasImageSource -> m Unit
 drawImageFull source dirty img =
   withCtx9 C.drawImageFull img sx sy sw sh dx dy dw dh
   where (Rect (sx >< sy) (sw >< sh)) = toRegion source
@@ -760,138 +805,144 @@ drawImageFull source dirty img =
 -- | Asynchronously load an image file by specifying its path and a callback
 -- | `CanvasAction`.
 tryLoadImage
-  :: String -> (Maybe CanvasImageSource -> CanvasAction) -> CanvasAction
+  :: forall m
+   . MonadCanvasAction m
+  => String -> (Maybe CanvasImageSource -> CanvasAction) -> m Unit
 tryLoadImage path action = withCtx \ctx ->
   C.tryLoadImage path (runAction ctx <$> action)
 
 foreign import setImageSmoothingImpl :: Context2D -> Boolean -> Effect Unit
 
 -- | Set the context's `imageSmoothingEnabled` property
-setImageSmoothing :: Boolean -> CanvasAction
+setImageSmoothing :: forall m. MonadCanvasAction m => Boolean -> m Unit
 setImageSmoothing = withCtx1 setImageSmoothingImpl
 
 foreign import getImageSmoothingImpl :: Context2D -> Effect Boolean
 
-getImageSmoothing :: CanvasActionM Boolean
+getImageSmoothing :: forall m. MonadCanvasAction m => m Boolean
 getImageSmoothing = withCtx getImageSmoothingImpl
 
 
 -- | Create a canvas pattern from an image, which can be used as a fill- or
 -- | strokeStyle
 createPattern
-  :: CanvasImageSource -> PatternRepeat -> CanvasActionM CanvasPattern
+  :: forall m
+   . MonadCanvasAction m
+  => CanvasImageSource -> PatternRepeat -> m CanvasPattern
 createPattern = withCtx2 C.createPattern
 
 -- | Constructs a blank linear `CanvasGradient` that can be modified with
 -- | `addColorStop`.
-createLinearGradient :: LinearGradient -> CanvasActionM CanvasGradient
+createLinearGradient
+  :: forall m. MonadCanvasAction m => LinearGradient -> m CanvasGradient
 createLinearGradient = withCtx1 C.createLinearGradient
 
 -- | Constructs a blank radial `CanvasGradient` that can be modified with
 -- | `addColorStop`.
-createRadialGradient :: RadialGradient -> CanvasActionM CanvasGradient
+createRadialGradient
+  :: forall m. MonadCanvasAction m => RadialGradient -> m CanvasGradient
 createRadialGradient = withCtx1 C.createRadialGradient
 
 -- | Note: Mutates the original `CanvasGradient` and returns `Unit`.
 -- | It is recommended to construct gradients with `linearGradient` and
 -- | `radialGradient` instead.
 addColorStop
-  :: forall r
-   . CanvasColorRep r
-  => CanvasGradient -> Number -> r -> CanvasAction
+  :: forall m r
+   . MonadCanvasAction m => CanvasColorRep r
+  => CanvasGradient -> Number -> r -> m Unit
 addColorStop grad n col = liftEffect $ C.addColorStop grad n (toColor col)
 
 linearGradient
-  :: forall r f
-   . CanvasColorRep r => Foldable f
-  => LinearGradient -> f (Tuple Number r) -> CanvasActionM CanvasGradient
+  :: forall m r f
+   . MonadCanvasAction m => CanvasColorRep r => Foldable f
+  => LinearGradient -> f (Tuple Number r) -> m CanvasGradient
 linearGradient grad cols = do
   canvasGradient <- createLinearGradient grad
   for_ cols \(Tuple n col) -> addColorStop canvasGradient n col
   pure canvasGradient
 
 radialGradient
-  :: forall r f
-   . CanvasColorRep r => Foldable f
-  => RadialGradient -> f (Tuple Number r) -> CanvasActionM CanvasGradient
+  :: forall m r f
+   . MonadCanvasAction m => CanvasColorRep r => Foldable f
+  => RadialGradient -> f (Tuple Number r) -> m CanvasGradient
 radialGradient grad cols = do
   canvasGradient <- createRadialGradient grad
   for_ cols \(Tuple n col) -> addColorStop canvasGradient n col
   pure canvasGradient
 
 
-resetTransform :: CanvasAction
+resetTransform :: forall m. MonadCanvasAction m => m Unit
 resetTransform = withCtx1 C.setTransform
   { m11: 1.0, m12: 0.0, m21: 0.0, m22: 1.0, m31: 0.0, m32: 0.0 }
 
-setTransform :: FullMatrixTransform -> CanvasAction
+setTransform :: forall m. MonadCanvasAction m => FullMatrixTransform -> m Unit
 setTransform = withCtx1 C.setTransform
 
 foreign import getTransformImpl :: Context2D -> Effect FullMatrixTransform
 
-getTransform :: CanvasActionM FullMatrixTransform
+getTransform :: forall m. MonadCanvasAction m => m FullMatrixTransform
 getTransform = withCtx getTransformImpl
 
-translate :: TranslateTransform -> CanvasAction
+translate :: forall m. MonadCanvasAction m => TranslateTransform -> m Unit
 translate = withCtx1 C.translate
 
-scale :: ScaleTransform -> CanvasAction
+scale :: forall m. MonadCanvasAction m => ScaleTransform -> m Unit
 scale = withCtx1 C.scale
 
-skew :: SkewTransform -> CanvasAction
+skew :: forall m. MonadCanvasAction m => SkewTransform -> m Unit
 skew { skewX, skewY } = withCtx1 C.transform
   { m11: 1.0, m12: skewY, m21: skewX, m22: 1.0, m31: 0.0, m32: 0.0 }
 
-rotate :: Number -> CanvasAction
+rotate :: forall m. MonadCanvasAction m => Number -> m Unit
 rotate = withCtx1 C.rotate
 
-fullMatrix :: FullMatrixTransform -> CanvasAction
+fullMatrix :: forall m. MonadCanvasAction m => FullMatrixTransform -> m Unit
 fullMatrix = withCtx1 C.transform
 
 
-beginPath :: CanvasAction
+beginPath :: forall m. MonadCanvasAction m => m Unit
 beginPath = withCtx C.beginPath
 
-stroke :: CanvasAction
+stroke :: forall m. MonadCanvasAction m => m Unit
 stroke = withCtx C.stroke
 
-fill :: CanvasAction
+fill :: forall m. MonadCanvasAction m => m Unit
 fill = withCtx C.fill
 
-clip :: CanvasAction
+clip :: forall m. MonadCanvasAction m => m Unit
 clip = withCtx C.clip
 
-lineTo :: forall p. ToPos Number p => p -> CanvasAction
+lineTo :: forall m p. MonadCanvasAction m => ToPos Number p => p -> m Unit
 lineTo pos = withCtx2 C.lineTo x y
   where (x >< y) = toPos pos
 
-moveTo :: forall p. ToPos Number p => p -> CanvasAction
+moveTo :: forall m p. MonadCanvasAction m => ToPos Number p => p -> m Unit
 moveTo pos = withCtx2 C.moveTo x y
   where (x >< y) = toPos pos
 
-closePath :: CanvasAction
+closePath :: forall m. MonadCanvasAction m => m Unit
 closePath = withCtx C.closePath
 
-arc :: Arc -> CanvasAction
+arc :: forall m. MonadCanvasAction m => Arc -> m Unit
 arc = withCtx1 C.arc
 
-rect :: forall r. ToRegion Number r => r -> CanvasAction
+rect :: forall m r. MonadCanvasAction m => ToRegion Number r => r -> m Unit
 rect = toRectangle >>> withCtx1 C.rect
 
-quadraticCurveTo :: QuadraticCurve -> CanvasAction
+quadraticCurveTo :: forall m. MonadCanvasAction m => QuadraticCurve -> m Unit
 quadraticCurveTo = withCtx1 C.quadraticCurveTo
 
-bezierCurveTo :: BezierCurve -> CanvasAction
+bezierCurveTo :: forall m. MonadCanvasAction m => BezierCurve -> m Unit
 bezierCurveTo = withCtx1 C.bezierCurveTo
 
 -- | Saves the context, see [`save` on MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/save)
-save :: CanvasAction
+save :: forall m. MonadCanvasAction m => m Unit
 save = withCtx C.save
 
 -- | Restores the context, see [`restore` on MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/restore)
-restore :: CanvasAction
+restore :: forall m. MonadCanvasAction m => m Unit
 restore = withCtx C.restore
 
 -- | Runs `save`, then the provided action, then `restore`
-restoreAfter :: forall a. CanvasActionM a -> CanvasActionM a
+restoreAfter :: forall m a. MonadCanvasAction m => m a -> m a
 restoreAfter action = save *> action <* restore
