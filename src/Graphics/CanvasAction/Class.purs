@@ -15,6 +15,11 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect)
 import Graphics.Canvas (Context2D)
 import Graphics.CanvasAction.Types (CanvasActionM)
+import Graphics.CanvasAction.Run (CANVAS)
+import Run (EFFECT, Run)
+import Run.Internal (fromRows)
+import Type.Equality (class TypeEquals)
+import Type.Row (RProxy)
 
 -- | The `MonadCanvasAction` class captures those monads which support canvas
 -- | actions.
@@ -32,6 +37,10 @@ instance monadCanvasActionCanvasActionM :: MonadCanvasAction (ReaderT Context2D 
 
 else instance monadCanvasActionReaderT :: MonadCanvasAction m => MonadCanvasAction (ReaderT r m) where
   liftCanvasAction = lift <<< liftCanvasAction
+
+
+instance monadCanvasActionRun :: (TypeEquals (RProxy r1) (RProxy (canvas :: CANVAS, effect :: EFFECT | r2))) ⇒ MonadCanvasAction (Run r1) where
+  liftCanvasAction = fromRows <<< liftCanvasAction
 
 
 instance monadCanvasActionContT :: MonadCanvasAction m => MonadCanvasAction (ContT r m) where
