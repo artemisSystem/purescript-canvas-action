@@ -115,6 +115,8 @@ module Graphics.CanvasAction
   , drawImage
   , drawImageScale
   , drawImageFull
+  , tryLoadImage
+  , tryLoadImage'
   , setImageSmoothing
   , getImageSmoothing
 
@@ -157,7 +159,7 @@ module Graphics.CanvasAction
 import Prelude
 
 import Color (Color, cssStringRGBA)
-import Control.Monad.Reader (ReaderT(..))
+import Control.Monad.Reader (ReaderT(..), ask)
 import Data.Foldable (class Foldable, for_)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (wrap)
@@ -802,14 +804,22 @@ drawImageFull source dirty img =
   where (Rect (sx >< sy) (sw >< sh)) = toRegion source
         (Rect (dx >< dy) (dw >< dh)) = toRegion dirty
 
+
+tryLoadImage'
+  :: forall m
+   . MonadCanvasAction m
+  => String -> (Maybe CanvasImageSource -> Effect Unit) -> m Unit
+tryLoadImage' path action = liftEffect $ C.tryLoadImage path action
+
 -- | Asynchronously load an image file by specifying its path and a callback
 -- | `CanvasAction`.
 tryLoadImage
   :: forall m
    . MonadCanvasAction m
   => String -> (Maybe CanvasImageSource -> CanvasAction) -> m Unit
-tryLoadImage path action = withCtx \ctx ->
-  C.tryLoadImage path (runAction ctx <$> action)
+tryLoadImage path action = do
+  ctx <- liftCanvasAction ask
+  tryLoadImage' path (runAction ctx <<< action)
 
 foreign import setImageSmoothingImpl :: Context2D -> Boolean -> Effect Unit
 
