@@ -38,6 +38,7 @@ module Graphics.CanvasAction
   , runAction'
   , runActionOffscreen
   , runActionOffscreen'
+  , asEffect
 
   , withCtx
   , withCtx1
@@ -349,9 +350,9 @@ runAction' ctx action = liftEffect $ runAction ctx action
 | Run a `CanvasActionM` in the `CanvasActionM` monad, on a created canvas with
 | the provided size. This can be useful for creating patterns for use as a
 | fillStyle or strokeStyle.
-| 
+|
 | For example:
-| 
+|
 | ```purescript
 | action :: CanvasAction
 | action = do
@@ -385,6 +386,13 @@ runActionOffscreen' action = do
   (size :: Vector2 Number) <- getDimensions <#> dimensionsToSize
     # liftCanvasAction
   runActionOffscreen size action
+
+-- | Runs a `CanvasActionM` in an `Effect` inside a functor context. Useful
+-- | for turning a function that returns a `CanvasActionM` into a function that
+-- | returns an `Effect`.
+asEffect
+  :: forall f a. Functor f => Context2D -> f (CanvasActionM a) -> f (Effect a)
+asEffect ctx = map (runAction ctx)
 
 -- | Convenience function for constructing `CanvasActionM`s from
 -- | `Graphics.Canvas`-style functions with no arguments apart from the

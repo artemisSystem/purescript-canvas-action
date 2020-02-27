@@ -7,5 +7,5 @@
 /.psc*
 /.purs*
 /.psa*
-/test/index.js
 /.spago
+/test/Test/*/index.js

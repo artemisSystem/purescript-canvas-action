@@ -1,0 +1,5 @@
+{ "private": true
+, "scripts":
+  { "example-run": "spago bundle-app -m Test.Run.Main -t test/Test/Run/index.js; open test/Test/Run/index.html"
+  }
+}
