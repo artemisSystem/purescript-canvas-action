@@ -394,7 +394,7 @@ asEffect
   :: forall f a. Functor f => Context2D -> f (CanvasActionM a) -> f (Effect a)
 asEffect ctx = map (runAction ctx)
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with no arguments apart from the
 -- | `Context2D`.
 withCtx :: forall m a . MonadCanvasAction m => (Context2D -> Effect a) -> m a

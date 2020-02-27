@@ -28,8 +28,9 @@ module Graphics.CanvasAction.Transformation
 import Prelude
 
 import Control.Monad.Free (Free, liftF, runFreeM)
+import Control.Monad.Rec.Class (class MonadRec)
 import Graphics.Canvas (TranslateTransform, ScaleTransform)
-import Graphics.CanvasAction (CanvasActionM, FullMatrixTransform, SkewTransform, getTransform, setTransform)
+import Graphics.CanvasAction (class MonadCanvasAction, FullMatrixTransform, SkewTransform, getTransform, setTransform)
 import Graphics.CanvasAction (translate, rotate, scale, fullMatrix, skew) as CA
 
 
@@ -86,7 +87,8 @@ fullMatrix m11 m12 m21 m22 m31 m32 =
   fullMatrix' { m11, m12, m21, m22, m31, m32 }
 
 -- | Run a transformation
-runTransform :: TransformationM ~> CanvasActionM
+runTransform
+  :: forall m. MonadCanvasAction m => MonadRec m => TransformationM ~> m
 runTransform = runFreeM go
   where
     go (Translate  t a) = CA.translate  t $> a
@@ -95,8 +97,11 @@ runTransform = runFreeM go
     go (Rotate     n a) = CA.rotate     n $> a
     go (FullMatrix f a) = CA.fullMatrix f $> a
 
--- | Run a transformation on a `CanvasActionM`, transforming back afterwards
-transformed :: forall a. Transformation -> CanvasActionM a -> CanvasActionM a
+-- | Run a transformation on a `MonadCanvasAction`, transforming back afterwards
+transformed
+  :: forall m a
+   . MonadCanvasAction m => MonadRec m
+  => Transformation -> m a -> m a
 transformed t act = do
   old <- getTransform
   runTransform t *> act <* setTransform old
