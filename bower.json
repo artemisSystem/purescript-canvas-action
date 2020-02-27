@@ -29,8 +29,10 @@
         "purescript-polymorphic-vectors": "^v1.1.1",
         "purescript-prelude": "^v4.1.1",
         "purescript-psci-support": "^v4.0.0",
+        "purescript-run": "^v3.0.1",
         "purescript-transformers": "^v4.2.0",
         "purescript-tuples": "^v5.1.0",
+        "purescript-typelevel-prelude": "^v5.0.2",
         "purescript-web-html": "^v2.3.0"
     }
 }
