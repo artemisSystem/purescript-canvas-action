@@ -170,7 +170,7 @@ import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasI
 import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite(..), Context2D, Dimensions, ImageData, LineCap(..), LineJoin(..), LinearGradient, PatternRepeat(..), QuadraticCurve, RadialGradient, ScaleTransform, TextAlign(..), TextMetrics, TranslateTransform, imageDataBuffer, imageDataHeight, imageDataWidth) as Exports
 import Graphics.CanvasAction.Class (class MonadCanvasAction, liftCanvasAction)
 import Graphics.CanvasAction.Class (class MonadCanvasAction, liftCanvasAction) as Exports
-import Graphics.CanvasAction.Types (CanvasAction, CanvasActionM)
+import Graphics.CanvasAction.Types (CanvasAction, CanvasActionM, runAction)
 import Graphics.CanvasAction.Types (CanvasAction, CanvasActionM, runAction) as Exports
 import Graphics.Canvas as C
 import Data.Vector.Polymorphic (Rect(..), Vector2, midPos, toRectangle, (><))
