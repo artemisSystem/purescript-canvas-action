@@ -34,7 +34,6 @@ module Graphics.CanvasAction
   , getCanvasElementById
   , getContext2D
 
-  , runAction
   , runAction'
   , runActionOffscreen
   , runActionOffscreen'
@@ -163,7 +162,6 @@ import Color (Color, cssStringRGBA)
 import Control.Monad.Reader (ReaderT(..), ask)
 import Data.Foldable (class Foldable, for_)
 import Data.Maybe (Maybe(..), fromJust)
-import Data.Newtype (wrap)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -173,7 +171,7 @@ import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasI
 import Graphics.CanvasAction.Class (class MonadCanvasAction, liftCanvasAction)
 import Graphics.CanvasAction.Class (class MonadCanvasAction, liftCanvasAction) as Exports
 import Graphics.CanvasAction.Types (CanvasAction, CanvasActionM)
-import Graphics.CanvasAction.Types (CanvasAction, CanvasActionM) as Exports
+import Graphics.CanvasAction.Types (CanvasAction, CanvasActionM, runAction) as Exports
 import Graphics.Canvas as C
 import Data.Vector.Polymorphic (Rect(..), Vector2, midPos, toRectangle, (><))
 import Data.Vector.Polymorphic.Class (class FromSize, class ToPos, class ToRegion, class ToSize, fromSize, toPos, toRegion, toSize)
@@ -332,10 +330,6 @@ getContext2D :: forall m. MonadCanvasAction m => CanvasElement -> m Context2D
 getContext2D = liftEffect <<< C.getContext2D
 
 
--- | Run a `CanvasActionM` in the `Effect` monad, on the provided `Context2D`
-runAction :: forall a. Context2D -> CanvasActionM a -> Effect a
-runAction ctx (ReaderT action) = action ctx
-
 -- | Run a `CanvasActionM` in a `MonadCanvasAction`, on the provided
 -- | `Context2D`. In essence, this allows drawing to a different canvas than
 -- | the action was run on. This can be useful for caching drawings on offscreen
@@ -398,7 +392,7 @@ asEffect ctx = map (runAction ctx)
 -- | `Graphics.Canvas`-style functions with no arguments apart from the
 -- | `Context2D`.
 withCtx :: forall m a . MonadCanvasAction m => (Context2D -> Effect a) -> m a
-withCtx = liftCanvasAction <<< wrap
+withCtx = liftCanvasAction <<< ReaderT
 
 -- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with one argument apart from the
