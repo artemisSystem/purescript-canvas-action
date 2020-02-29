@@ -27,21 +27,6 @@ liftCanvasActionAt
   => SProxy s -> CanvasActionM ~> Run r2
 liftCanvasActionAt = lift
 
--- | Runs a base `CanvasActionM` effect
-runBaseCanvas :: Run (canvas :: CANVAS) ~> CanvasActionM
-runBaseCanvas = runBaseCanvasAt _canvas
-
--- | Runs a base `CanvasActionM` effect at the provided label
-runBaseCanvasAt
-  :: forall s r
-   . IsSymbol s => Row.Cons s CANVAS () r
-  => SProxy s -> Run r ~> CanvasActionM
-runBaseCanvasAt p = runRec (case_ # on p identity)
-
--- | Runs base `CanvasActionM` and `Effect` together as one effect
-runBaseCanvas' :: Run (effect :: EFFECT, canvas :: CANVAS) ~> CanvasActionM
-runBaseCanvas' = runBaseCanvasAt' (SProxy :: _ "effect") _canvas
-
 runCanvas
   :: forall r
    . Context2D
@@ -62,6 +47,21 @@ runCanvasAt
   ~> Run r1
 runCanvasAt effect canvas ctx = interpret
   (on canvas (runAction ctx >>> lift effect) send)
+
+-- | Runs a base `CanvasActionM` effect
+runBaseCanvas :: Run (canvas :: CANVAS) ~> CanvasActionM
+runBaseCanvas = runBaseCanvasAt _canvas
+
+-- | Runs a base `CanvasActionM` effect at the provided label
+runBaseCanvasAt
+  :: forall s r
+   . IsSymbol s => Row.Cons s CANVAS () r
+  => SProxy s -> Run r ~> CanvasActionM
+runBaseCanvasAt p = runRec (case_ # on p identity)
+
+-- | Runs base `CanvasActionM` and `Effect` together as one effect
+runBaseCanvas' :: Run (effect :: EFFECT, canvas :: CANVAS) ~> CanvasActionM
+runBaseCanvas' = runBaseCanvasAt' (SProxy :: _ "effect") _canvas
 
 -- | Runs base `CanvasActionM` and `Effect` together as one effect at the
 -- | provided labels
