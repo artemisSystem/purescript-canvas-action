@@ -5,7 +5,10 @@
 -- | single function. They can be composed using `do` notation / bind or
 -- | applicative composition (`<*>`, `<*`, and `*>`). Semigroup composition
 -- | (`<>`) also works if the return types are the same and also a `Semigroup`
--- | (this includes `Unit`). It also has a `MonadRec` instance.
+-- | (this includes `Unit`). It also has a `MonadRec` instance. Functions from
+-- | this module can be used with any `MonadCanvasActionM`, which is a type
+-- | class with instances for monads which support canvas actions. Instances are
+-- | provided for `CanvasActionM`, `Run`, and the standard monad transformers.
 
 module Graphics.CanvasAction
   ( SkewTransform
@@ -32,9 +35,11 @@ module Graphics.CanvasAction
   , createCanvasEffect
   , createCanvasEffect'
   , getCanvasElementById
+  , querySelectCanvas
   , getContext2D
+  , getContext2DById
+  , querySelectContext2D
 
-  , runAction'
   , runActionOffscreen
   , runActionOffscreen'
   , asEffect
@@ -162,9 +167,10 @@ import Color (Color, cssStringRGBA)
 import Control.Monad.Reader (ReaderT(..), ask)
 import Data.Foldable (class Foldable, for_)
 import Data.Maybe (Maybe(..), fromJust)
+import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
-import Effect.Class (liftEffect)
+import Effect.Class (liftEffect, class MonadEffect)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite, Context2D, Dimensions, ImageData, LineCap, LineJoin, LinearGradient, PatternRepeat, QuadraticCurve, RadialGradient, ScaleTransform, TextAlign, TextMetrics, TranslateTransform)
 import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite(..), Context2D, Dimensions, ImageData, LineCap(..), LineJoin(..), LinearGradient, PatternRepeat(..), QuadraticCurve, RadialGradient, ScaleTransform, TextAlign(..), TextMetrics, TranslateTransform, imageDataBuffer, imageDataHeight, imageDataWidth) as Exports
@@ -178,9 +184,12 @@ import Data.Vector.Polymorphic.Class (class FromSize, class ToPos, class ToRegio
 import Unsafe.Coerce (unsafeCoerce)
 import Web.DOM (Element)
 import Web.DOM.Document (Document, createElement)
-import Web.HTML.HTMLDocument (toDocument)
+import Web.DOM.ParentNode (QuerySelector, querySelector)
+import Web.HTML.HTMLCanvasElement (fromElement, HTMLCanvasElement)
+import Web.HTML.HTMLDocument (toDocument, toParentNode) as HTMLDocument
 import Web.HTML (window)
 import Web.HTML.Window (document)
+
 
 -- | Type synonym for skew transformations.
 type SkewTransform = { skewX :: Number, skewY :: Number }
@@ -304,45 +313,51 @@ createCanvasEffect' doc = toSize >>> \(width >< height) -> do
 createCanvasEffect :: forall s. ToSize Number s => s -> Effect CanvasElement
 createCanvasEffect s = do
   doc <- window >>= document
-  createCanvasEffect' (toDocument doc) s
+  createCanvasEffect' (HTMLDocument.toDocument doc) s
 
 -- | Same as `createCanvas`, but allows for specifying the `Document` object to
 -- | create the canvas with
 createCanvas'
   :: forall m s
-   . MonadCanvasAction m => ToSize Number s
+   . MonadEffect m => ToSize Number s
   => Document -> s -> m CanvasElement
 createCanvas' doc s = liftEffect $ createCanvasEffect' doc s
 
 -- | Create a `CanvasElement` of the given size in any `MonadCanvasAction`
 createCanvas
-  :: forall m s . MonadCanvasAction m => ToSize Number s => s -> m CanvasElement
+  :: forall m s . MonadEffect m => ToSize Number s => s -> m CanvasElement
 createCanvas s = liftEffect $ createCanvasEffect s
 
-
 getCanvasElementById
-  :: forall m
-   . MonadCanvasAction m
-  => String -> m (Maybe CanvasElement)
+  :: forall m. MonadEffect m => String -> m (Maybe CanvasElement)
 getCanvasElementById = liftEffect <<< C.getCanvasElementById
 
-getContext2D :: forall m. MonadCanvasAction m => CanvasElement -> m Context2D
+querySelectCanvas
+  :: forall m. MonadEffect m => QuerySelector -> m (Maybe CanvasElement)
+querySelectCanvas canvas = liftEffect do
+  doc <- window >>= document <#> HTMLDocument.toParentNode
+  querySelector canvas doc
+    <#> (=<<) fromElement
+    <#> map toCanvasElement
+  where
+    toCanvasElement :: HTMLCanvasElement -> C.CanvasElement
+    toCanvasElement = unsafeCoerce
+
+getContext2D :: forall m. MonadEffect m => CanvasElement -> m Context2D
 getContext2D = liftEffect <<< C.getContext2D
 
+getContext2DById
+  :: forall m. MonadEffect m => String -> m (Maybe Context2D)
+getContext2DById = getCanvasElementById >=> traverse getContext2D
 
--- | Run a `CanvasActionM` in a `MonadCanvasAction`, on the provided
--- | `Context2D`. In essence, this allows drawing to a different canvas than
--- | the action was run on. This can be useful for caching drawings on offscreen
--- | canvases, to later draw them to the "main" canvas.
-runAction'
-  :: forall m a
-   . MonadCanvasAction m
-  => Context2D -> CanvasActionM a -> m a
-runAction' ctx action = liftEffect $ runAction ctx action
+querySelectContext2D
+  :: forall m. MonadEffect m => QuerySelector -> m (Maybe Context2D)
+querySelectContext2D = querySelectCanvas >=> traverse getContext2D
+
 
 {-
-| Run a `CanvasActionM` in the `CanvasActionM` monad, on a created canvas with
-| the provided size. This can be useful for creating patterns for use as a
+| Run a `CanvasActionM` in a `MonadEffect`, on a created canvas with the
+| provided size. This can be useful for creating patterns for use as a
 | fillStyle or strokeStyle.
 |
 | For example:
@@ -365,14 +380,14 @@ runAction' ctx action = liftEffect $ runAction ctx action
 -}
 runActionOffscreen
   :: forall m a s
-   . MonadCanvasAction m
+   . MonadEffect m
   => ToSize Number s => s -> CanvasActionM a -> m a
 runActionOffscreen size action = do
   ctx <- createCanvas size >>= getContext2D
-  runAction' ctx action
+  runAction ctx action
 
--- | Run a `CanvasActionM` in the `CanvasActionM` monad, on a created canvas
--- | with the same size as the "main" canvas. This can be useful for creating
+-- | Run a `CanvasActionM` in a `MonadCanvasAction`, on a created canvas with
+-- | the same size as the "main" canvas. This can be useful for creating
 -- | patterns for use as a fillStyle or strokeStyle. See `runActionOffscreen`
 -- | for an example.
 runActionOffscreen' :: forall m a. MonadCanvasAction m => CanvasActionM a -> m a
@@ -381,11 +396,13 @@ runActionOffscreen' action = do
     # liftCanvasAction
   runActionOffscreen size action
 
--- | Runs a `CanvasActionM` in an `Effect` inside a functor context. Useful
+-- | Runs a `CanvasActionM` in a `MonadEffect` inside a functor context. Useful
 -- | for turning a function that returns a `CanvasActionM` into a function that
 -- | returns an `Effect`.
 asEffect
-  :: forall f a. Functor f => Context2D -> f (CanvasActionM a) -> f (Effect a)
+  :: forall m f a
+   . Functor f => MonadEffect m
+  => Context2D -> f (CanvasActionM a) -> f (m a)
 asEffect ctx = map (runAction ctx)
 
 -- | Convenience function for constructing `MonadCanvasAction`s from
@@ -522,7 +539,7 @@ withCanvas
   :: forall m a. MonadCanvasAction m => (CanvasElement -> Effect a) -> m a
 withCanvas action = withCtx \ctx -> (getCanvasEffect ctx >>= action)
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with one argument apart from the
 -- | `CanvasElement`.
 withCanvas1
@@ -532,7 +549,7 @@ withCanvas1
   -> (a -> m b)
 withCanvas1 action a = withCanvas \canv -> action canv a
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with two arguments apart from the
 -- | `CanvasElement`.
 withCanvas2
@@ -542,7 +559,7 @@ withCanvas2
   -> (a -> b -> m c)
 withCanvas2 action a b = withCanvas \canv -> action canv a b
 
--- | Convenience function for constructing `CanvasActionM`s from
+-- | Convenience function for constructing `MonadCanvasAction`s from
 -- | `Graphics.Canvas`-style functions with three arguments apart from the
 -- | `CanvasElement`.
 withCanvas3
@@ -809,10 +826,11 @@ drawImageFull source dirty img =
 
 tryLoadImage'
   :: forall m
-   . MonadCanvasAction m
+   . MonadEffect m
   => String -> (Maybe CanvasImageSource -> Effect Unit) -> m Unit
 tryLoadImage' path action = liftEffect $ C.tryLoadImage path action
 
+-- TODO: Aff version?
 -- | Asynchronously load an image file by specifying its path and a callback
 -- | `CanvasAction`.
 tryLoadImage
@@ -860,7 +878,7 @@ createRadialGradient = withCtx1 C.createRadialGradient
 -- | `radialGradient` instead.
 addColorStop
   :: forall m r
-   . MonadCanvasAction m => CanvasColorRep r
+   . MonadEffect m => CanvasColorRep r
   => CanvasGradient -> Number -> r -> m Unit
 addColorStop grad n col = liftEffect $ C.addColorStop grad n (toColor col)
 
