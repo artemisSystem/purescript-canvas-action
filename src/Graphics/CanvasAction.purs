@@ -370,7 +370,7 @@ querySelectContext2D = querySelectCanvas >=> traverse getContext2D
 |     filled "#aaf" fillRectFull
 |     filled "#afa" $ fillRect (makeRect 0.0 10.0 10.0 10.0)
 |     filled "#faa" $ fillRect (makeRect 10.0 0.0 10.0 10.0)
-|     imageSource >>= flip createPattern Repeat
+|     imageSource >>= (_ `createPattern` Repeat)
 |   fillPathWith pattern do
 |     circle (200.0 >< 200.0) 175.0
 |     circle ( 50.0 ><  50.0)  50.0
