@@ -185,6 +185,7 @@ import Unsafe.Coerce (unsafeCoerce)
 import Web.DOM (Element)
 import Web.DOM.Document (Document, createElement)
 import Web.DOM.ParentNode (QuerySelector, querySelector)
+import Web.DOM.ParentNode (QuerySelector(..)) as Exports
 import Web.HTML.HTMLCanvasElement (fromElement, HTMLCanvasElement)
 import Web.HTML.HTMLDocument (toDocument, toParentNode) as HTMLDocument
 import Web.HTML (window)
