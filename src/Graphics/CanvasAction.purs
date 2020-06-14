@@ -122,6 +122,7 @@ module Graphics.CanvasAction
   , drawImageFull
   , tryLoadImage
   , tryLoadImage'
+  , loadImageAff
   , setImageSmoothing
   , getImageSmoothing
 
@@ -170,8 +171,11 @@ import Data.Maybe (Maybe(..), fromJust)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
+import Effect.Aff (Aff, makeAff, effectCanceler)
 import Effect.Class (liftEffect, class MonadEffect)
+import Effect.Exception (error)
 import Effect.Exception.Unsafe (unsafeThrow)
+import Effect.Ref as Ref
 import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite, Context2D, Dimensions, ImageData, LineCap, LineJoin, LinearGradient, PatternRepeat, QuadraticCurve, RadialGradient, ScaleTransform, TextAlign, TextMetrics, TranslateTransform)
 import Graphics.Canvas (Arc, BezierCurve, CanvasElement, CanvasGradient, CanvasImageSource, CanvasPattern, Composite(..), Context2D, Dimensions, ImageData, LineCap(..), LineJoin(..), LinearGradient, PatternRepeat(..), QuadraticCurve, RadialGradient, ScaleTransform, TextAlign(..), TextMetrics, TranslateTransform, imageDataBuffer, imageDataHeight, imageDataWidth) as Exports
 import Graphics.CanvasAction.Class (class MonadCanvasAction, liftCanvasAction)
@@ -824,14 +828,14 @@ drawImageFull source dirty img =
   where (Rect (sx >< sy) (sw >< sh)) = toRegion source
         (Rect (dx >< dy) (dw >< dh)) = toRegion dirty
 
-
+-- | Asynchronously load an image file by specifying its path and a callback
+-- | `Effect Unit`.
 tryLoadImage'
   :: forall m
    . MonadEffect m
   => String -> (Maybe CanvasImageSource -> Effect Unit) -> m Unit
 tryLoadImage' path action = liftEffect $ C.tryLoadImage path action
 
--- TODO: Aff version?
 -- | Asynchronously load an image file by specifying its path and a callback
 -- | `CanvasAction`.
 tryLoadImage
@@ -841,6 +845,15 @@ tryLoadImage
 tryLoadImage path action = do
   ctx <- liftCanvasAction ask
   tryLoadImage' path (runAction ctx <<< action)
+
+loadImageAff :: String -> Aff CanvasImageSource
+loadImageAff path = makeAff \cb -> do
+  canceled <- Ref.new false
+  tryLoadImage' path do
+    unlessM (Ref.read canceled) <<< case _ of
+      Just image -> cb (Right image)
+      Nothing -> cb (Left do error ("Image \"" <> path <> "\" not found"))
+  pure do effectCanceler (Ref.write true canceled)
 
 foreign import setImageSmoothingImpl :: Context2D -> Boolean -> Effect Unit
 
