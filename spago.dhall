@@ -4,7 +4,8 @@ You can edit this file as you like.
 -}
 { name = "canvas-action"
 , dependencies =
-    [ "canvas"
+    [ "aff"
+    , "canvas"
     , "colors"
     , "console"
     , "effect"

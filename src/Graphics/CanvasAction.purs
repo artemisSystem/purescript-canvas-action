@@ -12,7 +12,7 @@
 
 module Graphics.CanvasAction
   ( SkewTransform
-  , FullMatrixTransform
+  , MatrixTransform
   , TextBaseline(..)
 
   , CanvasStyle
@@ -134,26 +134,26 @@ module Graphics.CanvasAction
   , linearGradient
   , radialGradient
 
-  , resetTransform
-  , setTransform
-  , getTransform
-  , translate
-  , scale
-  , skew
-  , rotate
-  , fullMatrix
+  , resetTransform_
+  , setTransform_
+  , getTransform_
+  , translate_
+  , scale_
+  , skew_
+  , rotate_
+  , matrixTransform_
 
-  , beginPath
-  , stroke
-  , fill
-  , clip
-  , lineTo
-  , moveTo
-  , closePath
-  , arc
-  , rect
-  , quadraticCurveTo
-  , bezierCurveTo
+  , beginPath_
+  , stroke_
+  , fill_
+  , clip_
+  , lineTo_
+  , moveTo_
+  , closePath_
+  , arc_
+  , rect_
+  , quadraticCurveTo_
+  , bezierCurveTo_
 
   , save
   , restore
@@ -166,6 +166,7 @@ import Prelude
 
 import Color (Color, cssStringRGBA)
 import Control.Monad.Reader (ReaderT(..), ask)
+import Data.Either (Either(..))
 import Data.Foldable (class Foldable, for_)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Traversable (traverse)
@@ -199,17 +200,20 @@ import Web.HTML.Window (document)
 -- | Type synonym for skew transformations.
 type SkewTransform = { skewX :: Number, skewY :: Number }
 
--- | Type synonym for full matrix transformations.
+-- | Type synonym for matrix transformations.
 -- This is the same as `Graphics.Canvas`'s `Transform`, but there is a separate
 -- type in this module to avoid confusion with `Transformation` from
 -- `Graphics.CanvasAction.Transformation`.
-type FullMatrixTransform =
-  { m11 :: Number
-  , m12 :: Number
-  , m21 :: Number
-  , m22 :: Number
-  , m31 :: Number
-  , m32 :: Number
+-- NOTE: Currently, `Graphics.Canvas` have these fields noted as `m11` to `m32`,
+-- but this is inconsistent with the `CanvasRenderingContext2D` API.
+-- MatrixTransform is correct.
+type MatrixTransform =
+  { a :: Number
+  , b :: Number
+  , c :: Number
+  , d :: Number
+  , e :: Number
+  , f :: Number
   }
 
 -- | Enumerates types of text baseline
@@ -915,69 +919,83 @@ radialGradient grad cols = do
   pure canvasGradient
 
 
-resetTransform :: forall m. MonadCanvasAction m => m Unit
-resetTransform = withCtx1 C.setTransform
-  { m11: 1.0, m12: 0.0, m21: 0.0, m22: 1.0, m31: 0.0, m32: 0.0 }
+resetTransform_ :: forall m. MonadCanvasAction m => m Unit
+resetTransform_ = setTransform_
+  { a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: 0.0, f: 0.0 }
 
-setTransform :: forall m. MonadCanvasAction m => FullMatrixTransform -> m Unit
-setTransform = withCtx1 C.setTransform
+setTransform_ :: forall m. MonadCanvasAction m => MatrixTransform -> m Unit
+setTransform_ { a, b, c, d, e, f } = withCtx1 C.setTransform
+  { m11: a
+  , m12: b
+  , m21: c
+  , m22: d
+  , m31: e
+  , m32: f
+  }
 
-foreign import getTransformImpl :: Context2D -> Effect FullMatrixTransform
+foreign import getTransformImpl :: Context2D -> Effect MatrixTransform
 
-getTransform :: forall m. MonadCanvasAction m => m FullMatrixTransform
-getTransform = withCtx getTransformImpl
+getTransform_ :: forall m. MonadCanvasAction m => m MatrixTransform
+getTransform_ = withCtx getTransformImpl
 
-translate :: forall m. MonadCanvasAction m => TranslateTransform -> m Unit
-translate = withCtx1 C.translate
+translate_ :: forall m. MonadCanvasAction m => TranslateTransform -> m Unit
+translate_ = withCtx1 C.translate
 
-scale :: forall m. MonadCanvasAction m => ScaleTransform -> m Unit
-scale = withCtx1 C.scale
+scale_ :: forall m. MonadCanvasAction m => ScaleTransform -> m Unit
+scale_ = withCtx1 C.scale
 
-skew :: forall m. MonadCanvasAction m => SkewTransform -> m Unit
-skew { skewX, skewY } = withCtx1 C.transform
-  { m11: 1.0, m12: skewY, m21: skewX, m22: 1.0, m31: 0.0, m32: 0.0 }
+skew_ :: forall m. MonadCanvasAction m => SkewTransform -> m Unit
+skew_ { skewX, skewY } = matrixTransform_
+  { a: 1.0, b: skewY, c: skewX, d: 1.0, e: 0.0, f: 0.0 }
 
-rotate :: forall m. MonadCanvasAction m => Number -> m Unit
-rotate = withCtx1 C.rotate
+rotate_ :: forall m. MonadCanvasAction m => Number -> m Unit
+rotate_ = withCtx1 C.rotate
 
-fullMatrix :: forall m. MonadCanvasAction m => FullMatrixTransform -> m Unit
-fullMatrix = withCtx1 C.transform
+matrixTransform_ :: forall m. MonadCanvasAction m => MatrixTransform -> m Unit
+matrixTransform_ { a, b, c, d, e, f } = withCtx1 C.transform
+  { m11: a
+  , m12: b
+  , m21: c
+  , m22: d
+  , m31: e
+  , m32: f
+  }
 
 
-beginPath :: forall m. MonadCanvasAction m => m Unit
-beginPath = withCtx C.beginPath
+beginPath_ :: forall m. MonadCanvasAction m => m Unit
+beginPath_ = withCtx C.beginPath
 
-stroke :: forall m. MonadCanvasAction m => m Unit
-stroke = withCtx C.stroke
+stroke_ :: forall m. MonadCanvasAction m => m Unit
+stroke_ = withCtx C.stroke
 
-fill :: forall m. MonadCanvasAction m => m Unit
-fill = withCtx C.fill
+fill_ :: forall m. MonadCanvasAction m => m Unit
+fill_ = withCtx C.fill
 
-clip :: forall m. MonadCanvasAction m => m Unit
-clip = withCtx C.clip
+clip_ :: forall m. MonadCanvasAction m => m Unit
+clip_ = withCtx C.clip
 
-lineTo :: forall m p. MonadCanvasAction m => ToPos Number p => p -> m Unit
-lineTo pos = withCtx2 C.lineTo x y
+lineTo_ :: forall m p. MonadCanvasAction m => ToPos Number p => p -> m Unit
+lineTo_ pos = withCtx2 C.lineTo x y
   where (x >< y) = toPos pos
 
-moveTo :: forall m p. MonadCanvasAction m => ToPos Number p => p -> m Unit
-moveTo pos = withCtx2 C.moveTo x y
+moveTo_ :: forall m p. MonadCanvasAction m => ToPos Number p => p -> m Unit
+moveTo_ pos = withCtx2 C.moveTo x y
   where (x >< y) = toPos pos
 
-closePath :: forall m. MonadCanvasAction m => m Unit
-closePath = withCtx C.closePath
+closePath_ :: forall m. MonadCanvasAction m => m Unit
+closePath_ = withCtx C.closePath
 
-arc :: forall m. MonadCanvasAction m => Arc -> m Unit
-arc = withCtx1 C.arc
+arc_ :: forall m. MonadCanvasAction m => Arc -> m Unit
+arc_ = withCtx1 C.arc
 
-rect :: forall m r. MonadCanvasAction m => ToRegion Number r => r -> m Unit
-rect = toRectangle >>> withCtx1 C.rect
+rect_ :: forall m r. MonadCanvasAction m => ToRegion Number r => r -> m Unit
+rect_ = toRectangle >>> withCtx1 C.rect
 
-quadraticCurveTo :: forall m. MonadCanvasAction m => QuadraticCurve -> m Unit
-quadraticCurveTo = withCtx1 C.quadraticCurveTo
+quadraticCurveTo_ :: forall m. MonadCanvasAction m => QuadraticCurve -> m Unit
+quadraticCurveTo_ = withCtx1 C.quadraticCurveTo
 
-bezierCurveTo :: forall m. MonadCanvasAction m => BezierCurve -> m Unit
-bezierCurveTo = withCtx1 C.bezierCurveTo
+bezierCurveTo_ :: forall m. MonadCanvasAction m => BezierCurve -> m Unit
+bezierCurveTo_ = withCtx1 C.bezierCurveTo
 
 -- | Saves the context, see [`save` on MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/save)
 save :: forall m. MonadCanvasAction m => m Unit

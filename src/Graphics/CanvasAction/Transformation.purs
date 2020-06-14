@@ -1,8 +1,8 @@
 -- | This module defines a free monad for working with canvas transformations in
 -- | a more pleasant way. Construct transforms with the various functions, like
--- | `translate`, `scale` and `fullMatrix`. There are also alternate functions
--- | (denoted by a `'`), which take the dedicated data type for that transform,
--- | instead of `Number`s, as arguments. Perform a transform with
+-- | `translate`, `scale` and `matrixTransform`. There are also alternate
+-- | functions (denoted by a `'`), which take the dedicated data type for that
+-- | transform, instead of `Number`s, as arguments. Perform a transform with
 -- | `runTransform`, or use `transformed` to also reset the transformation
 -- | matrix to its previous value afterwards.
 
@@ -10,7 +10,11 @@ module Graphics.CanvasAction.Transformation
   ( TransformationF
   , TransformationM
   , Transformation
-  
+
+  , resetTransform
+  , setTransform
+  , setTransform'
+  , getTransform
   , translate
   , translate'
   , scale
@@ -18,8 +22,8 @@ module Graphics.CanvasAction.Transformation
   , skew
   , skew'
   , rotate
-  , fullMatrix
-  , fullMatrix'
+  , matrixTransform
+  , matrixTransform'
 
   , runTransform
   , transformed
@@ -30,22 +34,45 @@ import Prelude
 import Control.Monad.Free (Free, liftF, runFreeM)
 import Control.Monad.Rec.Class (class MonadRec)
 import Graphics.Canvas (TranslateTransform, ScaleTransform)
-import Graphics.CanvasAction (class MonadCanvasAction, FullMatrixTransform, SkewTransform, getTransform, setTransform)
-import Graphics.CanvasAction (translate, rotate, scale, fullMatrix, skew) as CA
+import Graphics.CanvasAction (class MonadCanvasAction, MatrixTransform, SkewTransform)
+import Graphics.CanvasAction as CA
 
 
 data TransformationF a
-  = Translate  TranslateTransform  a
-  | Scale      ScaleTransform      a
-  | Skew       SkewTransform       a
-  | Rotate     Number              a
-  | FullMatrix FullMatrixTransform a
+  = ResetTransform                   a
+  | SetTransform  MatrixTransform    a
+  | GetTransform (MatrixTransform -> a)
+  | Translate     TranslateTransform a
+  | Scale         ScaleTransform     a
+  | Skew          SkewTransform      a
+  | Rotate        Number             a
+  | Matrix        MatrixTransform    a
 
 derive instance functorTransformationF :: Functor TransformationF
 
 type TransformationM = Free TransformationF
 type Transformation = TransformationM Unit
 
+
+-- | Reset the transformation matrix to its default value
+resetTransform :: Transformation
+resetTransform = liftF $ ResetTransform unit
+
+-- | Construct a `Transformation` from a `MatrixTransform`, replacing the
+-- | current matrix
+setTransform' :: MatrixTransform -> Transformation
+setTransform' f = liftF $ SetTransform f unit
+
+-- | Construct a `Transformation` from six `Number`s representing a matrix
+-- | transformation, replacing the current matrix
+setTransform
+  :: Number -> Number -> Number -> Number -> Number -> Number -> Transformation
+setTransform a b c d e f =
+  setTransform' { a, b, c, d, e, f }
+
+-- | Get the current transformation matrix
+getTransform :: TransformationM MatrixTransform
+getTransform = liftF $ GetTransform identity
 
 -- | Construct a `Transformation` from a `TranslateTransform`
 translate' :: TranslateTransform -> Transformation
@@ -75,33 +102,37 @@ skew skewX skewY = skew' { skewX, skewY }
 rotate :: Number -> Transformation
 rotate rad = liftF $ Rotate rad unit
 
--- | Construct a `Transformation` from a `FullMatrixTransform`
-fullMatrix' :: FullMatrixTransform -> Transformation
-fullMatrix' f = liftF $ FullMatrix f unit
+-- | Construct a `Transformation` from a `MatrixTransform`, multiplying the
+-- | new matrix with the current matrix
+matrixTransform' :: MatrixTransform -> Transformation
+matrixTransform' f = liftF $ Matrix f unit
 
--- | Construct a `Transformation` from six `Number`s representing a full
--- | matrix transformation
-fullMatrix
+-- | Construct a `Transformation` from six `Number`s representing a matrix
+-- | transformation, multiplying the new matrix with the current matrix
+matrixTransform
   :: Number -> Number -> Number -> Number -> Number -> Number -> Transformation
-fullMatrix m11 m12 m21 m22 m31 m32 =
-  fullMatrix' { m11, m12, m21, m22, m31, m32 }
+matrixTransform a b c d e f =
+  matrixTransform' { a, b, c, d, e, f }
 
 -- | Run a transformation
 runTransform
   :: forall m. MonadCanvasAction m => MonadRec m => TransformationM ~> m
 runTransform = runFreeM go
   where
-    go (Translate  t a) = CA.translate  t $> a
-    go (Scale      s a) = CA.scale      s $> a
-    go (Skew       s a) = CA.skew       s $> a
-    go (Rotate     n a) = CA.rotate     n $> a
-    go (FullMatrix f a) = CA.fullMatrix f $> a
+    go (ResetTransform a) = CA.resetTransform_    $> a
+    go (SetTransform f a) = CA.setTransform_    f $> a
+    go (GetTransform   f) = CA.getTransform_     <#> f
+    go (Translate    t a) = CA.translate_       t $> a
+    go (Scale        s a) = CA.scale_           s $> a
+    go (Skew         s a) = CA.skew_            s $> a
+    go (Rotate       n a) = CA.rotate_          n $> a
+    go (Matrix       f a) = CA.matrixTransform_ f $> a
 
 -- | Run a transformation on a `MonadCanvasAction`, transforming back afterwards
 transformed
   :: forall m a
    . MonadCanvasAction m => MonadRec m
   => Transformation -> m a -> m a
-transformed t act = do
-  old <- getTransform
-  runTransform t *> act <* setTransform old
+transformed t action = do
+  old <- CA.getTransform_
+  runTransform t *> action <* CA.setTransform_ old

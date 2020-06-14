@@ -57,7 +57,7 @@ import Data.Foldable (class Foldable, traverse_)
 import Data.List (List(..), fromFoldable, (:))
 import Graphics.Canvas (Arc, QuadraticCurve, BezierCurve)
 import Graphics.CanvasAction (class CanvasStyleRep, class MonadCanvasAction)
-import Graphics.CanvasAction (arc, beginPath, bezierCurveTo, clip, closePath, fill, lineTo, moveTo, quadraticCurveTo, rect, stroke, filled, stroked) as CA
+import Graphics.CanvasAction as CA
 import Data.Vector.Polymorphic (Rect, Vector2, (><))
 import Data.Vector.Polymorphic.Class (class ToPos, class ToRegion, toPos, toRegion)
 import Math (tau)
@@ -105,16 +105,16 @@ closePath = liftF $ ClosePath unit
 interpret :: forall m. MonadCanvasAction m => MonadRec m => PathM ~> m
 interpret = runFreeM go
   where
-    go (LineTo           p a) = CA.lineTo           p $> a
-    go (MoveTo           p a) = CA.moveTo           p $> a
-    go (PathArc          r a) = CA.arc              r $> a
-    go (PathRect         r a) = CA.rect             r $> a
-    go (QuadraticCurveTo q a) = CA.quadraticCurveTo q $> a
-    go (BezierCurveTo    b a) = CA.bezierCurveTo    b $> a
-    go (ClosePath          a) = CA.closePath          $> a
+    go (LineTo           p a) = CA.lineTo_           p $> a
+    go (MoveTo           p a) = CA.moveTo_           p $> a
+    go (PathArc          r a) = CA.arc_              r $> a
+    go (PathRect         r a) = CA.rect_             r $> a
+    go (QuadraticCurveTo q a) = CA.quadraticCurveTo_ q $> a
+    go (BezierCurveTo    b a) = CA.bezierCurveTo_    b $> a
+    go (ClosePath          a) = CA.closePath_          $> a
 
 fillPath :: forall m. MonadCanvasAction m => MonadRec m => PathM ~> m
-fillPath path = CA.beginPath *> interpret path <* CA.fill
+fillPath path = CA.beginPath_ *> interpret path <* CA.fill_
 
 fillPathWith
   :: forall m r
@@ -123,7 +123,7 @@ fillPathWith
 fillPathWith color = CA.filled color <<< fillPath
 
 strokePath :: forall m. MonadCanvasAction m => MonadRec m => PathM ~> m
-strokePath path = CA.beginPath *> interpret path <* CA.stroke
+strokePath path = CA.beginPath_ *> interpret path <* CA.stroke_
 
 strokePathWith
   :: forall m r
@@ -132,7 +132,7 @@ strokePathWith
 strokePathWith color = CA.stroked color <<< strokePath
 
 clip :: forall m. MonadCanvasAction m => MonadRec m => PathM ~> m
-clip path = CA.beginPath *> interpret path <* CA.clip
+clip path = CA.beginPath_ *> interpret path <* CA.clip_
 
 -- | Draw a polygon with the specified points. Starts and ends on the first
 -- | point.

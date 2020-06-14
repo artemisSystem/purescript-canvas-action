@@ -23,12 +23,12 @@ exports.getImageSmoothingImpl = ctx => () => ctx.imageSmoothingEnabled;
 exports.getTransformImpl = ctx => () => {
   const t = ctx.getTransform();
   return (
-    { m11: t.m11
-    , m12: t.m12
-    , m21: t.m21
-    , m22: t.m22
-    , m31: t.m31
-    , m32: t.m32
+    { a: t.a
+    , b: t.b
+    , c: t.c
+    , d: t.d
+    , e: t.e
+    , f: t.f
     });
 }
 
