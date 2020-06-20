@@ -15,23 +15,22 @@ import Run.Except (FAIL, fail, runFail)
 import Web.HTML (window)
 import Web.HTML.Window (confirm)
 
-getCtx :: String -> Effect Context2D
+getCtx ∷ String → Effect Context2D
 getCtx id = getCanvasElementById id >>= case _ of
-  Just canv -> getContext2D canv
-  Nothing -> throw "No canvas"
+  Just canv → getContext2D canv
+  Nothing → throw "No canvas"
 
-main :: Effect Unit
+main ∷ Effect Unit
 main = do
-  ctx <- getCtx "canvas"
+  ctx ← getCtx "canvas"
   action
     # runFail >>> void
     # runCanvas ctx
     # runBaseEffect
 
-action
-  :: forall r. Run (canvas :: CANVAS, effect :: EFFECT, except :: FAIL | r) Unit
+action ∷ ∀ r. Run (canvas ∷ CANVAS, effect ∷ EFFECT, except ∷ FAIL | r) Unit
 action = filled "#aaf" do
-  w <- liftEffect window
+  w ← liftEffect window
   fillRect (makeRect  10.0  10.0 80.0 80.0)
   fillRect (makeRect 110.0 110.0 80.0 80.0)
   fail

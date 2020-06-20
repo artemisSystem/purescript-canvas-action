@@ -6,10 +6,10 @@
 -- |
 -- | Example:
 -- | ```purescript
--- | action :: CanvasAction
+-- | action ∷ CanvasAction
 -- | action = fillPathWith "red" path
 -- |
--- | path :: Path
+-- | path ∷ Path
 -- | path = do
 -- |   moveTo (100.0 >< 100.0)
 -- |   lineTo (200.0 >< 10.0)
@@ -72,37 +72,37 @@ data PathF a
   | BezierCurveTo    BezierCurve      a
   | ClosePath                         a
 
-derive instance functorPathF :: Functor PathF
+derive instance functorPathF ∷ Functor PathF
 
 type PathM = Free PathF
 type Path = PathM Unit
 
-lineTo :: forall p. ToPos Number p => p -> Path
+lineTo ∷ ∀ p. ToPos Number p ⇒ p → Path
 lineTo pos = liftF $ LineTo pos' unit
   where pos' = toPos pos
 
-moveTo :: forall p. ToPos Number p => p -> Path
+moveTo ∷ ∀ p. ToPos Number p ⇒ p → Path
 moveTo pos = liftF $ MoveTo pos' unit
   where pos' = toPos pos
 
-arc :: Arc -> Path
+arc ∷ Arc → Path
 arc a = liftF $ PathArc a unit
 
-rect :: forall r. ToRegion Number r => r -> Path
+rect ∷ ∀ r. ToRegion Number r ⇒ r → Path
 rect region = liftF $ PathRect region' unit
   where region' = toRegion region
 
-quadraticCurveTo :: QuadraticCurve -> Path
+quadraticCurveTo ∷ QuadraticCurve → Path
 quadraticCurveTo q = liftF $ QuadraticCurveTo q unit
 
-bezierCurveTo :: BezierCurve -> Path
+bezierCurveTo ∷ BezierCurve → Path
 bezierCurveTo q = liftF $ BezierCurveTo q unit
 
-closePath :: Path
+closePath ∷ Path
 closePath = liftF $ ClosePath unit
 
 
-interpret :: forall m. MonadCanvasAction m => MonadRec m => PathM ~> m
+interpret ∷ ∀ m. MonadCanvasAction m ⇒ MonadRec m ⇒ PathM ~> m
 interpret = runFreeM go
   where
     go (LineTo           p a) = CA.lineTo_           p $> a
@@ -113,30 +113,26 @@ interpret = runFreeM go
     go (BezierCurveTo    b a) = CA.bezierCurveTo_    b $> a
     go (ClosePath          a) = CA.closePath_          $> a
 
-fillPath :: forall m. MonadCanvasAction m => MonadRec m => PathM ~> m
+fillPath ∷ ∀ m. MonadCanvasAction m ⇒ MonadRec m ⇒ PathM ~> m
 fillPath path = CA.beginPath_ *> interpret path <* CA.fill_
 
-fillPathWith
-  :: forall m r
-   . MonadCanvasAction m => MonadRec m => CanvasStyleRep r
-  => r -> PathM ~> m
+fillPathWith ∷
+  ∀ m r. MonadCanvasAction m ⇒ MonadRec m ⇒ CanvasStyleRep r ⇒ r → PathM ~> m
 fillPathWith color = CA.filled color <<< fillPath
 
-strokePath :: forall m. MonadCanvasAction m => MonadRec m => PathM ~> m
+strokePath ∷ ∀ m. MonadCanvasAction m ⇒ MonadRec m ⇒ PathM ~> m
 strokePath path = CA.beginPath_ *> interpret path <* CA.stroke_
 
-strokePathWith
-  :: forall m r
-   . MonadCanvasAction m => MonadRec m => CanvasStyleRep r
-  => r -> PathM ~> m
+strokePathWith ∷
+  ∀ m r. MonadCanvasAction m ⇒ MonadRec m ⇒ CanvasStyleRep r ⇒ r → PathM ~> m
 strokePathWith color = CA.stroked color <<< strokePath
 
-clip :: forall m. MonadCanvasAction m => MonadRec m => PathM ~> m
+clip ∷ ∀ m. MonadCanvasAction m ⇒ MonadRec m ⇒ PathM ~> m
 clip path = CA.beginPath_ *> interpret path <* CA.clip_
 
 -- | Draw a polygon with the specified points. Starts and ends on the first
 -- | point.
-polygon :: forall p f. ToPos Number p => Foldable f => f p -> Path
+polygon ∷ ∀ p f. ToPos Number p ⇒ Foldable f ⇒ f p → Path
 polygon = go <<< fromFoldable
   where
     go (p0 : ps) = moveTo p0 *> traverse_ lineTo ps *> closePath
@@ -144,7 +140,7 @@ polygon = go <<< fromFoldable
 
 -- | Draw a circle with the specified center and radius. Ends on the rightmost
 -- | point of the circle.
-circle :: forall p. ToPos Number p => p -> Number -> Path
+circle ∷ ∀ p. ToPos Number p ⇒ p → Number → Path
 circle pos radius = do
   moveTo (x + radius >< y)
   arc { x, y, radius, start: 0.0, end: tau }

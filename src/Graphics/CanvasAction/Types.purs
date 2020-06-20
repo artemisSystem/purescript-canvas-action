@@ -16,5 +16,5 @@ type CanvasActionM = ReaderT Context2D Effect
 type CanvasAction = CanvasActionM Unit
 
 -- | Run a `CanvasActionM` in a `MonadEffect`, on the provided `Context2D`.
-runAction :: forall m a. MonadEffect m => Context2D -> CanvasActionM a -> m a
+runAction ∷ ∀ m a. MonadEffect m ⇒ Context2D → CanvasActionM a → m a
 runAction ctx (ReaderT action) = liftEffect (action ctx)

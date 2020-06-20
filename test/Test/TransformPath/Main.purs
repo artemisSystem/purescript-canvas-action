@@ -13,17 +13,17 @@ import Graphics.CanvasAction.Path (Path, circle, fillPathWith, polygon, strokePa
 import Math (tau)
 
 
-getCtx :: CanvasAction -> String -> Effect Context2D
+getCtx ∷ CanvasAction → String → Effect Context2D
 getCtx setupCanvas id = getCanvasElementById id >>= case _ of
-  Just canv -> getContext2D canv >>= \ctx -> runAction ctx setupCanvas $> ctx
-  Nothing -> throw "No canvas"
+  Just canv → getContext2D canv >>= \ctx → runAction ctx setupCanvas $> ctx
+  Nothing → throw "No canvas"
 
-main :: Effect Unit
+main ∷ Effect Unit
 main = do
-  ctx <- getCtx setup "canvas"
+  ctx ← getCtx setup "canvas"
   runAction ctx (setup *> action)
 
-path :: Path
+path ∷ Path
 path = do
   polygon
     [   0.0 ><   0.0
@@ -34,12 +34,12 @@ path = do
   circle (50.0 >< 50.0) 25.0
   circle (90.0 >< 75.0) 30.0
 
-setup :: CanvasAction
+setup ∷ CanvasAction
 setup = do
   setLineWidth 3.0
   setGlobalAlpha 0.8
 
-action :: CanvasAction
+action ∷ CanvasAction
 action = transformed (translate 50.0 50.0) do
   transformed (translate (-25.0) (-10.0)) $ traverse_ (_ $ path)
     [ transformed (scale 2.0 2.0 <> skew 0.0 0.3) <<< fillPathWith "#6f9"
