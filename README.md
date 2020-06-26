@@ -18,6 +18,6 @@ Make sure you have the purescript compiler, parcel and spago installed and
 available on your PATH.
 
 To test one of the examples, run `npm run example-<name>`, replacing `<name>`
-with the camelCase name of the example or test you want to run. This will create
-a server that auto-rebuilds every time you make a change to its source. The
+with the name of the example or test you want to run. This will create a
+server that auto-rebuilds every time you make a change to its source. The
 examples are located in `/test/Test/<Name>`.
