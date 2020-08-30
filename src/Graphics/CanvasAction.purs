@@ -814,6 +814,8 @@ tryLoadImage path action = do
   ctx ← liftCanvasAction ask
   tryLoadImage' path (runAction ctx <<< action)
 
+-- | Asynchrounously load an image file by specifying its path. The returned
+-- | `Aff` will throw an error if the image wasn't found.
 loadImageAff ∷ String → Aff CanvasImageSource
 loadImageAff path = makeAff \cb → do
   canceled ← Ref.new false
