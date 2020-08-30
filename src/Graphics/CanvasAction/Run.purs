@@ -30,11 +30,11 @@ liftCanvasActionAt = lift
 runCanvas ∷
   ∀ r
   . Context2D
-  → Run (canvas ∷ CANVAS, effect ∷ EFFECT | r) ~> Run (effect ∷ EFFECT | r)
+  → Run (effect ∷ EFFECT, canvas ∷ CANVAS | r) ~> Run (effect ∷ EFFECT | r)
 runCanvas = runCanvasAt (SProxy ∷ _ "effect") _canvas
 
-runCanvasAt
-  ∷ ∀ effect canvas r0 r1 r2
+runCanvasAt ∷
+  ∀ effect canvas r0 r1 r2
   . IsSymbol effect
   ⇒ IsSymbol canvas
   ⇒ Row.Cons effect EFFECT r0 r1
@@ -61,8 +61,8 @@ runBaseCanvas' = runBaseCanvasAt' (SProxy ∷ _ "effect") _canvas
 
 -- | Runs base `CanvasActionM` and `Effect` together as one effect at the
 -- | provided labels
-runBaseCanvasAt'
-  ∷ ∀ effect canvas r1 r2
+runBaseCanvasAt' ∷
+  ∀ effect canvas r1 r2
   . IsSymbol effect
   ⇒ IsSymbol canvas
   ⇒ Row.Cons effect EFFECT () r1

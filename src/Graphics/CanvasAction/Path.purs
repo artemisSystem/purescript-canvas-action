@@ -49,6 +49,12 @@ module Graphics.CanvasAction.Path
   , circle
   ) where
 
+-- TODO: Currently, only the *info* required to make the path is stored in the
+-- PathM monad, meaning that it is remade every time it is used.
+-- A possible solution would be to keep it the way it is, but provide a
+-- `getPath` function, that would save the current path and let you grab it for
+-- reuse.
+
 import Prelude
 
 import Control.Monad.Free (Free, liftF, runFreeM)
