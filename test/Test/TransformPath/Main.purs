@@ -21,7 +21,7 @@ getCtx setupCanvas id = getCanvasElementById id >>= case _ of
 main ∷ Effect Unit
 main = do
   ctx ← getCtx setup "canvas"
-  runAction ctx (setup *> action)
+  runAction ctx action
 
 path ∷ Path
 path = do
