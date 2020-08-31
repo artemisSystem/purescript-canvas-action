@@ -1,5 +1,21 @@
 # purescript-canvas-action
 
+## Installation
+
+```sh
+spago install canvas-action
+```
+
+## Developing
+
+Make sure you have the purescript compiler, parcel and spago installed and
+available on your PATH.
+
+To test one of the examples, run `npm run example-<Name>`, replacing `<Name>`
+with the name of the example or test you want to run. This will create a
+server that auto-rebuilds every time you make a change to its source, and open a
+browser window. The examples are located in `/test/Test/<Name>`.
+
 ## Documentation
 
 This is a package that introduces a monad for working with the HTML5 canvas
@@ -11,13 +27,3 @@ respective modules.
 ### Reference
 
 Module reference is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-canvas-action).
-
-## Developing
-
-Make sure you have the purescript compiler, parcel and spago installed and
-available on your PATH.
-
-To test one of the examples, run `npm run example-<name>`, replacing `<name>`
-with the name of the example or test you want to run. This will create a
-server that auto-rebuilds every time you make a change to its source. The
-examples are located in `/test/Test/<Name>`.
