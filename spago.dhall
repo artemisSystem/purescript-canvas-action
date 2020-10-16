@@ -7,7 +7,6 @@ You can edit this file as you like.
     [ "aff"
     , "canvas"
     , "colors"
-    , "console"
     , "effect"
     , "exceptions"
     , "foldable-traversable"
@@ -19,7 +18,6 @@ You can edit this file as you like.
     , "partial"
     , "polymorphic-vectors"
     , "prelude"
-    , "psci-support"
     , "run"
     , "transformers"
     , "tuples"
@@ -29,5 +27,5 @@ You can edit this file as you like.
 , license = "MIT"
 , repository = "https://github.com/3ddyy/purescript-canvas-action.git"
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs" ]
 }

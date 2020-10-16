@@ -1,6 +1,7 @@
 { "private": true
 , "scripts":
-  { "example-Run": "spago build && (parcel serve --open -p 1337 --out-dir dev test/Test/Run/index.html & spago build --watch)"
+  { "repl": "spago -x dev.dhall repl"
+  , "example-Run": "spago build && (parcel serve --open -p 1337 --out-dir dev test/Test/Run/index.html & spago build --watch)"
   , "example-TransformPath": "spago build && (parcel serve --open -p 1337 --out-dir dev test/Test/TransformPath/index.html & spago build --watch)"
   }
 }

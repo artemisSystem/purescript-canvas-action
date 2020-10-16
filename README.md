@@ -16,6 +16,8 @@ with the name of the example or test you want to run. This will create a
 server that auto-rebuilds every time you make a change to its source, and open a
 browser window. The examples are located in `/test/Test/<Name>`.
 
+Open the REPL using `npm run repl` (`spago -x dev.dhall repl`).
+
 ## Documentation
 
 This is a package that introduces a monad for working with the HTML5 canvas

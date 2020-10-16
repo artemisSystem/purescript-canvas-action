@@ -119,20 +119,10 @@ let additions =
 
 
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.6-20200127/packages.dhall sha256:06a623f48c49ea1c7675fdf47f81ddb02ae274558e29f511efae1df99ea92fb8
+      https://github.com/purescript/package-sets/releases/download/psc-0.13.8-20201007/packages.dhall sha256:35633f6f591b94d216392c9e0500207bb1fec42dd355f4fecdfd186956567b6b
 
 let overrides = {=}
 
-let additions =
-  { polymorphic-vectors =
-    { dependencies =
-      [ "prelude"
-      , "canvas"
-      , "math"
-      ]
-    , repo = "https://github.com/3ddyy/purescript-polymorphic-vectors.git"
-    , version = "v1.1.1"
-    }
-  }
+let additions = {=}
 
 in  upstream // overrides // additions
