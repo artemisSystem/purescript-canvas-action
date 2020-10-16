@@ -244,31 +244,31 @@ foreign import styleIsGradient ∷ CanvasStyle → Boolean
 
 foreign import styleIsPattern ∷ CanvasStyle → Boolean
 
-styleToX ∷ ∀ a. (CanvasStyle → Boolean) → (CanvasStyle → Maybe a)
-styleToX isCorrect style
+unsafeStyleToX ∷ ∀ a. (CanvasStyle → Boolean) → (CanvasStyle → Maybe a)
+unsafeStyleToX isCorrect style
   | isCorrect style = Just (unsafeCoerce style)
   | otherwise       = Nothing
 
-styleToX' ∷ ∀ a. (CanvasStyle → Boolean) → (Partial ⇒ CanvasStyle → a)
-styleToX' isC style = fromJust $ styleToX isC style
+unsafeStyleToX' ∷ ∀ a. (CanvasStyle → Boolean) → (Partial ⇒ CanvasStyle → a)
+unsafeStyleToX' isC style = fromJust $ unsafeStyleToX isC style
 
 styleToString ∷ CanvasStyle → Maybe String
-styleToString = styleToX styleIsString
+styleToString = unsafeStyleToX styleIsString
 
 styleToString' ∷ Partial ⇒ CanvasStyle → String
-styleToString' = styleToX' styleIsString
+styleToString' = unsafeStyleToX' styleIsString
 
 styleToGradient ∷ CanvasStyle → Maybe CanvasGradient
-styleToGradient = styleToX styleIsGradient
+styleToGradient = unsafeStyleToX styleIsGradient
 
 styleToGradient' ∷ Partial ⇒ CanvasStyle → CanvasGradient
-styleToGradient' = styleToX' styleIsGradient
+styleToGradient' = unsafeStyleToX' styleIsGradient
 
 styleToPattern ∷ CanvasStyle → Maybe CanvasPattern
-styleToPattern = styleToX styleIsPattern
+styleToPattern = unsafeStyleToX styleIsPattern
 
 styleToPattern' ∷ Partial ⇒ CanvasStyle → CanvasPattern
-styleToPattern' = styleToX' styleIsPattern
+styleToPattern' = unsafeStyleToX' styleIsPattern
 
 
 -- | Class describing types that can be turned into a valid `CanvasStyle` for
