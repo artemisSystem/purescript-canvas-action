@@ -25,7 +25,7 @@ You can edit this file as you like.
     , "web-html"
     ]
 , license = "MIT"
-, repository = "https://github.com/3ddyy/purescript-canvas-action.git"
+, repository = "https://github.com/artemisSystem/purescript-canvas-action.git"
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]
 }
