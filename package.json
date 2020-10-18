@@ -1,7 +1,7 @@
 { "private": true
 , "scripts":
   { "repl": "spago -x dev.dhall repl"
-  , "example-Run": "spago build && (parcel serve --open -p 1337 --out-dir dev test/Test/Run/index.html & spago build --watch)"
-  , "example-TransformPath": "spago build && (parcel serve --open -p 1337 --out-dir dev test/Test/TransformPath/index.html & spago build --watch)"
+  , "example-Run": "spago build -x dev.dhall && (parcel serve --open -p 1337 --out-dir dev test/Test/Run/index.html & spago -x dev.dhall build --watch)"
+  , "example-TransformPath": "spago build -x dev.dhall && (parcel serve --open -p 1337 --out-dir dev test/Test/TransformPath/index.html & spago -x dev.dhall build --watch)"
   }
 }

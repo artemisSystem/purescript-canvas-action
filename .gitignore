@@ -4,5 +4,5 @@ bower_components
 .psc-ide-port
 output
 generated-docs
-/.cache
-/dev
+.cache
+dev
