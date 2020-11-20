@@ -1,7 +1,8 @@
 node_modules
 bower_components
 .spago
-.psc-ide-port
+.psc-ide-port*
+.psci_modules
 output
 generated-docs
 .cache
