@@ -32,8 +32,6 @@ module Graphics.CanvasAction
 
   , createCanvas
   , createCanvas'
-  , createCanvasEffect
-  , createCanvasEffect'
   , getCanvasElementById
   , querySelectCanvas
   , getContext2D
