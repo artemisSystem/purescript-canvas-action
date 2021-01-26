@@ -2,8 +2,8 @@
   "private": true,
   "scripts": {
     "repl": "npx spago -x dev.dhall repl",
-    "example-Run": "npx spago build -x dev.dhall && (npx parcel serve --open -p 1337 --out-dir dev test/Test/Run/index.html & npx spago -x dev.dhall build --watch)",
-    "example-TransformPath": "npx spago build -x dev.dhall && (npx parcel serve --open -p 1337 --out-dir dev test/Test/TransformPath/index.html & npx spago -x dev.dhall build --watch)"
+    "example-Run": "npx spago -x dev.dhall build && (npx parcel serve --open -p 1337 --out-dir dev test/Test/Run/index.html & npx spago -x dev.dhall build --watch)",
+    "example-TransformPath": "npx spago -x dev.dhall build && (npx parcel serve --open -p 1337 --out-dir dev test/Test/TransformPath/index.html & npx spago -x dev.dhall build --watch)"
   },
   "devDependencies": {
     "bower": "^1.8.8",
