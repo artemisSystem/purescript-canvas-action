@@ -7,21 +7,11 @@ import Data.Maybe (Maybe(..))
 import Data.Vector.Polymorphic ((><))
 import Effect (Effect)
 import Effect.Exception (throw)
-import Graphics.CanvasAction (CanvasAction, Context2D, getCanvasElementById, getContext2D, runAction, setGlobalAlpha, setLineWidth)
-import Graphics.CanvasAction.Transformation (rotate, runTransform, scale, skew, transformed, translate)
+import Graphics.CanvasAction (CanvasAction, Context2D, fillRect, fillRectFull, getCanvasElementById, getContext2D, runAction, setLineWidth)
 import Graphics.CanvasAction.Path (Path, circle, fillPathWith, polygon, strokePathWith)
+import Graphics.CanvasAction.Transformation (rotate, runTransform, scale, skew, transformed, translate)
 import Math (tau)
 
-
-getCtx ∷ CanvasAction → String → Effect Context2D
-getCtx setupCanvas id = getCanvasElementById id >>= case _ of
-  Just canv → getContext2D canv >>= \ctx → runAction ctx setupCanvas $> ctx
-  Nothing → throw "No canvas"
-
-main ∷ Effect Unit
-main = do
-  ctx ← getCtx setup "canvas"
-  runAction ctx action
 
 path ∷ Path
 path = do
@@ -37,7 +27,6 @@ path = do
 setup ∷ CanvasAction
 setup = do
   setLineWidth 3.0
-  setGlobalAlpha 0.8
 
 action ∷ CanvasAction
 action = transformed (translate 50.0 50.0) do
@@ -50,3 +39,19 @@ action = transformed (translate 50.0 50.0) do
   transformed (translate 50.0 0.0 <> rotate (tau/8.0)) do
     fillPathWith "#69f" path
   fillPathWith "#99f" path
+
+action' ∷ CanvasAction
+action' = do
+  transformed (translate 50.0 50.0 <> scale 0.5 0.5) do
+    fillRectFull
+  do fillRect (50.0 >< 50.0)
+
+getCtx ∷ CanvasAction → String → Effect Context2D
+getCtx setupCanvas id = getCanvasElementById id >>= case _ of
+  Just canv → getContext2D canv >>= \ctx → runAction ctx setupCanvas $> ctx
+  Nothing → throw "No canvas"
+
+main ∷ Effect Unit
+main = do
+  ctx ← getCtx setup "canvas"
+  runAction ctx action'
