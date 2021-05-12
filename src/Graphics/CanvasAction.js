@@ -19,20 +19,3 @@ exports.setImageSmoothingImpl = ctx => bool => () => void
   (ctx.imageSmoothingEnabled = bool);
 
 exports.getImageSmoothingImpl = ctx => () => ctx.imageSmoothingEnabled;
-
-exports.getTransformImpl = ctx => () => {
-  const t = ctx.getTransform();
-  return (
-    { a: t.a
-    , b: t.b
-    , c: t.c
-    , d: t.d
-    , e: t.e
-    , f: t.f
-    });
-}
-
-exports.getTextBaselineImpl = ctx => () => ctx.textBaseline;
-
-exports.setTextBaselineImpl = ctx => baseline => () =>
-  void (ctx.textBaseline = baseline);
