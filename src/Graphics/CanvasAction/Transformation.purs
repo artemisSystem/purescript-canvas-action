@@ -1,135 +1,141 @@
--- | This module defines a free monad for working with canvas transformations in
--- | a more pleasant way. Construct transforms with the various functions, like
--- | `translate`, `scale` and `matrixTransform`. There are also alternate
--- | functions (denoted by a `'`), which take the dedicated data type for that
--- | transform, instead of `Number`s, as arguments. Perform a transform with
--- | `runTransform`, or use `transformed` to also reset the transformation
--- | matrix to its previous value afterwards.
-
 module Graphics.CanvasAction.Transformation
-  ( TransformationF
-  , TransformationM
-  , Transformation
+  ( DOMMatrix
+  , DOMMatrixRecord
 
-  , resetTransform
-  , setTransform
-  , setTransform'
+  , multiplyDOMMatrix
+  , invertDOMMatrix
+  , fromRecord
+  , fromNumbers
+  , toRecord
+
+  , transform
   , getTransform
-  , translate
-  , translate'
-  , scale
-  , scale'
-  , skew
-  , skew'
-  , rotate
-  , matrixTransform
-  , matrixTransform'
+  , setTransform
+  , resetTransform
+  , transformedBy
+  , transformedTo
+  , transformPoint
 
-  , runTransform
-  , transformed
+  , translate
+  , scale
+  , rotate
+  , rotateAround
+  , skew
   ) where
 
 import Prelude
 
-import Control.Monad.Free (Free, liftF, runFreeM)
-import Control.Monad.Rec.Class (class MonadRec)
-import Graphics.Canvas (TranslateTransform, ScaleTransform)
-import Graphics.CanvasAction (class MonadCanvasAction, MatrixTransform, SkewTransform)
-import Graphics.CanvasAction as CA
+import Data.Vector.Polymorphic ((><))
+import Data.Vector.Polymorphic.Class (class AsPosEndo, class ToPos, asPosEndo, toPos)
+import Effect (Effect)
+import Effect.Class (liftEffect)
+import Graphics.Canvas as C
+import Graphics.CanvasAction (class MonadCanvasAction, Context2D, getCtx)
+import Math (Radians)
+import Math as Math
+
+foreign import data DOMMatrix ∷ Type
+
+instance showDOMMatrix ∷ Show DOMMatrix where
+  show m = "(fromRecord " <> show (toRecord m) <> ")"
+
+instance eqDOMMatrix ∷ Eq DOMMatrix where
+  eq m1 m2 = eq (toRecord m1) (toRecord m2)
+
+instance semigroupDOMMatrix ∷ Semigroup DOMMatrix where
+  append = multiplyDOMMatrix
+
+instance monoidDOMMatrix ∷ Monoid DOMMatrix where
+  mempty = fromRecord { a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: 0.0, f: 0.0 }
+
+type DOMMatrixRecord =
+  { a ∷ Number
+  , b ∷ Number
+  , c ∷ Number
+  , d ∷ Number
+  , e ∷ Number
+  , f ∷ Number
+  }
+
+toTransform ∷ DOMMatrix → C.Transform
+toTransform = toRecord >>> \{ a, b, c, d, e, f } →
+  { m11: a, m12: b, m21: c, m22: d, m31: e, m32: f }
 
 
-data TransformationF a
-  = ResetTransform                   a
-  | SetTransform  MatrixTransform    a
-  | GetTransform (MatrixTransform  → a)
-  | Translate     TranslateTransform a
-  | Scale         ScaleTransform     a
-  | Skew          SkewTransform      a
-  | Rotate        Number             a
-  | Matrix        MatrixTransform    a
+foreign import multiplyDOMMatrix ∷ DOMMatrix → DOMMatrix → DOMMatrix
 
-derive instance functorTransformationF ∷ Functor TransformationF
+foreign import invertDOMMatrix ∷ DOMMatrix → DOMMatrix
 
-type TransformationM = Free TransformationF
-type Transformation = TransformationM Unit
+foreign import fromRecord ∷ DOMMatrixRecord → DOMMatrix
+
+fromNumbers ∷ Number → Number → Number → Number → Number → Number → DOMMatrix
+fromNumbers a b c d e f = fromRecord { a, b, c, d, e, f }
+
+foreign import toRecord ∷ DOMMatrix → DOMMatrixRecord
 
 
--- | Reset the transformation matrix to its default value
-resetTransform ∷ Transformation
-resetTransform = liftF $ ResetTransform unit
+transform ∷ ∀ m. MonadCanvasAction m ⇒ DOMMatrix → m Unit
+transform matrix = do
+  ctx ← getCtx
+  liftEffect (C.transform ctx (toTransform matrix))
 
--- | Construct a `Transformation` from a `MatrixTransform`, replacing the
--- | current matrix
-setTransform' ∷ MatrixTransform → Transformation
-setTransform' f = liftF $ SetTransform f unit
 
--- | Construct a `Transformation` from six `Number`s representing a matrix
--- | transformation, replacing the current matrix
-setTransform ∷
-  Number → Number → Number → Number → Number → Number → Transformation
-setTransform a b c d e f =
-  setTransform' { a, b, c, d, e, f }
+foreign import getTransformImpl ∷ Context2D → Effect DOMMatrix
 
--- | Get the current transformation matrix
-getTransform ∷ TransformationM MatrixTransform
-getTransform = liftF $ GetTransform identity
+-- | Gets the current transformation matrix
+getTransform ∷ ∀ m. MonadCanvasAction m ⇒ m DOMMatrix
+getTransform = getCtx >>= map liftEffect getTransformImpl
 
--- | Construct a `Transformation` from a `TranslateTransform`
-translate' ∷ TranslateTransform → Transformation
-translate' t = liftF $ Translate t unit
+-- | Sets the transformation matrix to the given DOMMatrix
+setTransform ∷ ∀ m. MonadCanvasAction m ⇒ DOMMatrix → m Unit
+setTransform matrix = do
+  ctx ← getCtx
+  liftEffect (C.setTransform ctx (toTransform matrix))
 
--- | Construct a `Transformation` from two `Number`s representing translation
-translate ∷ Number → Number → Transformation
-translate translateX translateY = translate' { translateX, translateY }
+-- | Resets the transformation matrix
+resetTransform ∷ ∀ m. MonadCanvasAction m ⇒ m Unit
+resetTransform = setTransform mempty
 
--- | Construct a `Transformation` from a `ScaleTransform`
-scale' ∷ ScaleTransform → Transformation
-scale' s = liftF $ Scale s unit
+-- | Applies the given transformation, runs the given action, and returns the
+-- | transformation matrix to its previous state.
+transformedBy ∷ ∀ m a. MonadCanvasAction m ⇒ DOMMatrix → m a → m a
+transformedBy t action = do
+  old ← getTransform
+  transform t *> action <* setTransform old
 
--- | Construct a `Transformation` from two `Number`s representing scaling
-scale ∷ Number → Number → Transformation
-scale scaleX scaleY = scale' { scaleX, scaleY }
+-- | Sets the transformation matrix to the given DOMMatrix, runs the given
+-- | action, and returns the transformation matrix to its previous state.
+transformedTo ∷ ∀ m a. MonadCanvasAction m ⇒ DOMMatrix → m a → m a
+transformedTo t action = do
+  old ← getTransform
+  setTransform t *> action <* setTransform old
 
--- | Construct a `Transformation` from a `SkewTransform`
-skew' ∷ SkewTransform → Transformation
-skew' s = liftF $ Skew s unit
+-- | Applies a tranformation matrix to a point
+transformPoint ∷ ∀ p. AsPosEndo Number p ⇒ DOMMatrix → p → p
+transformPoint matrix = asPosEndo \(x >< y) → do
+  let { a, b, c, d, e, f } = toRecord matrix
+  (x * a + y * c + e >< b * x + y * d + f)
 
--- | Construct a `Transformation` from two `Number`s representing skew
-skew ∷ Number → Number → Transformation
-skew skewX skewY = skew' { skewX, skewY }
+-- | Constructs a DOMMatrix that applies a translation
+translate ∷ Number → Number → DOMMatrix
+translate tx ty = fromNumbers 1.0 0.0 0.0 1.0 tx ty
 
--- | Construct a `Transformation` from a `Number` representing radians rotated
-rotate ∷ Number → Transformation
-rotate rad = liftF $ Rotate rad unit
+-- | Constructs a DOMMatrix that applies a scaling
+scale ∷ Number → Number → DOMMatrix
+scale sx sy = fromNumbers sx 0.0 0.0 sy 0.0 0.0
 
--- | Construct a `Transformation` from a `MatrixTransform`, multiplying the
--- | new matrix with the current matrix
-matrixTransform' ∷ MatrixTransform → Transformation
-matrixTransform' f = liftF $ Matrix f unit
-
--- | Construct a `Transformation` from six `Number`s representing a matrix
--- | transformation, multiplying the new matrix with the current matrix
-matrixTransform ∷
-  Number → Number → Number → Number → Number → Number → Transformation
-matrixTransform a b c d e f =
-  matrixTransform' { a, b, c, d, e, f }
-
--- | Run a transformation
-runTransform ∷ ∀ m. MonadCanvasAction m ⇒ MonadRec m ⇒ TransformationM ~> m
-runTransform = runFreeM go
+-- | Constructs a DOMMatrix that applies a rotation
+rotate ∷ Radians → DOMMatrix
+rotate theta = fromNumbers cos sin (-sin) cos 0.0 0.0
   where
-    go (ResetTransform a) = CA.resetTransform_    $> a
-    go (SetTransform f a) = CA.setTransform_    f $> a
-    go (GetTransform   f) = CA.getTransform_     <#> f
-    go (Translate    t a) = CA.translate_       t $> a
-    go (Scale        s a) = CA.scale_           s $> a
-    go (Skew         s a) = CA.skew_            s $> a
-    go (Rotate       n a) = CA.rotate_          n $> a
-    go (Matrix       f a) = CA.matrixTransform_ f $> a
+  sin = Math.sin theta
+  cos = Math.cos theta
 
--- | Run a transformation on a `MonadCanvasAction`, transforming back afterwards
-transformed ∷
-  ∀ m a. MonadCanvasAction m ⇒ MonadRec m ⇒ Transformation → m a → m a
-transformed t action = do
-  old ← CA.getTransform_
-  runTransform t *> action <* CA.setTransform_ old
+-- | Constructs a DOMMatrix that applies a rotation around the specified point
+rotateAround ∷ ∀ p. ToPos Number p ⇒ p → Radians → DOMMatrix
+rotateAround pos theta = translate x y <> rotate theta <> translate (-x) (-y)
+  where (x >< y) = toPos pos
+
+-- | Constructs a DOMMatrix that applies a skewing
+skew ∷ Number → Number → DOMMatrix
+skew sx sy =  fromNumbers 1.0 sy sx 1.0 0.0 0.0
