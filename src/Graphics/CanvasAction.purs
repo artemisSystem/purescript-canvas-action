@@ -396,30 +396,30 @@ styleToPattern = unsafeStyleToX styleIsPattern
 class CanvasStyle style where
   toStyleRep ∷ style → CanvasStyleRep
 
-instance canvasStyleRepCanvasStyle ∷ CanvasStyle CanvasStyleRep where
+instance CanvasStyle CanvasStyleRep where
   toStyleRep = identity
 
-instance canvasStyleRepString ∷ CanvasStyle String where
-  toStyleRep = unsafeCoerce
+instance CanvasStyle CanvasGradient where
+  toStyleRep = (unsafeCoerce ∷ CanvasGradient → CanvasStyleRep)
 
-instance canvasStyleRepColor ∷ CanvasStyle Color where
-  toStyleRep = toStyleRep <<< toColorRep
+instance CanvasStyle CanvasPattern where
+  toStyleRep = (unsafeCoerce ∷ CanvasPattern → CanvasStyleRep)
 
-instance canvasStyleRepGradient ∷ CanvasStyle CanvasGradient where
-  toStyleRep = unsafeCoerce
+instance CanvasStyle String where
+  toStyleRep = (unsafeCoerce ∷ String → CanvasStyleRep)
 
-instance canvasStyleRepPattern ∷ CanvasStyle CanvasPattern where
-  toStyleRep = unsafeCoerce
+instance CanvasStyle Color where
+  toStyleRep = toColorRep >>> (unsafeCoerce ∷ String → CanvasStyleRep)
 
 -- | Class describing types that can be turned into a string representing a
 -- | canvas color.
 class CanvasColor color where
   toColorRep ∷ color → String
 
-instance canvasColorRepString ∷ CanvasColor String where
+instance CanvasColor String where
   toColorRep = identity
 
-instance canvasColorRepColor ∷ CanvasColor Color where
+instance CanvasColor Color where
   toColorRep = cssStringRGBA
 
 foreign import setFillStyleImpl ∷ Context2D → CanvasStyleRep → Effect Unit
@@ -740,6 +740,7 @@ addColorStop
   → Number
   → color
   → m Unit
+
 addColorStop grad n col = liftEffect $ C.addColorStop grad n (toColorRep col)
 
 -- | Saves the context, see [`save` on MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/save)

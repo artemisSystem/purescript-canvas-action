@@ -41,56 +41,56 @@ fromRows' = unsafeCoerce
 class MonadEffect m ⇐ MonadCanvasAction m where
   liftCanvasAction ∷ CanvasAction ~> m
 
-instance monadCanvasActionCanvasAction ∷ MonadCanvasAction CanvasAction where
+instance MonadCanvasAction CanvasAction where
   liftCanvasAction = identity
 
-else instance monadCanvasActionCanvasAff ∷ MonadCanvasAction CanvasAff where
+else instance MonadCanvasAction CanvasAff where
   liftCanvasAction = mapReaderT liftEffect
 
-else instance monadCanvasActionReaderT ∷
+else instance
   MonadCanvasAction m ⇒
   MonadCanvasAction (ReaderT r m) where
   liftCanvasAction = lift <<< liftCanvasAction
 
-instance monadCanvasActionRun ∷
+instance
   ( TypeEquals (Proxy r1) (Proxy (CTX + EFFECT + r2))
   ) ⇒
   MonadCanvasAction (Run r1) where
   liftCanvasAction = fromRows' <<< CRun.liftCanvasAction
 
-instance monadCanvasActionContT ∷
+instance
   MonadCanvasAction m ⇒
   MonadCanvasAction (ContT r m) where
   liftCanvasAction = lift <<< liftCanvasAction
 
-instance monadCanvasActionExceptT ∷
+instance
   MonadCanvasAction m ⇒
   MonadCanvasAction (ExceptT e m) where
   liftCanvasAction = lift <<< liftCanvasAction
 
-instance monadCanvasActionListT ∷
+instance
   MonadCanvasAction m ⇒
   MonadCanvasAction (ListT m) where
   liftCanvasAction = lift <<< liftCanvasAction
 
-instance monadCanvasActionMaybeT ∷
+instance
   MonadCanvasAction m ⇒
   MonadCanvasAction (MaybeT m) where
   liftCanvasAction = lift <<< liftCanvasAction
 
-instance monadCanvasActionRWST ∷
+instance
   ( Monoid w
   , MonadCanvasAction m
   ) ⇒
   MonadCanvasAction (RWST r w s m) where
   liftCanvasAction = lift <<< liftCanvasAction
 
-instance monadCanvasActionStateT ∷
+instance
   MonadCanvasAction m ⇒
   MonadCanvasAction (StateT s m) where
   liftCanvasAction = lift <<< liftCanvasAction
 
-instance monadCanvasActionWriterT ∷
+instance
   ( Monoid w
   , MonadCanvasAction m
   ) ⇒
@@ -107,43 +107,43 @@ instance monadCanvasActionWriterT ∷
 class (MonadAff m, MonadCanvasAction m) ⇐ MonadCanvasAff m where
   liftCanvasAff ∷ CanvasAff ~> m
 
-instance monadCanvasAffCanvasAff ∷ MonadCanvasAff CanvasAff where
+instance MonadCanvasAff CanvasAff where
   liftCanvasAff = identity
 
-else instance monadCanvasAffReaderT ∷
+else instance
   MonadCanvasAff m ⇒
   MonadCanvasAff (ReaderT r m) where
   liftCanvasAff = lift <<< liftCanvasAff
 
-instance monadCanvasAffRun ∷
+instance
   ( TypeEquals (Proxy r1) (Proxy (CTX + AFF + EFFECT + r2))
   ) ⇒
   MonadCanvasAff (Run r1) where
   liftCanvasAff = fromRows' <<< CRun.liftCanvasAff
 
-instance monadCanvasAffContT ∷ MonadCanvasAff m ⇒ MonadCanvasAff (ContT r m) where
+instance MonadCanvasAff m ⇒ MonadCanvasAff (ContT r m) where
   liftCanvasAff = lift <<< liftCanvasAff
 
-instance monadCanvasAffExceptT ∷ MonadCanvasAff m ⇒ MonadCanvasAff (ExceptT e m) where
+instance MonadCanvasAff m ⇒ MonadCanvasAff (ExceptT e m) where
   liftCanvasAff = lift <<< liftCanvasAff
 
-instance monadCanvasAffListT ∷ MonadCanvasAff m ⇒ MonadCanvasAff (ListT m) where
+instance MonadCanvasAff m ⇒ MonadCanvasAff (ListT m) where
   liftCanvasAff = lift <<< liftCanvasAff
 
-instance monadCanvasAffMaybeT ∷ MonadCanvasAff m ⇒ MonadCanvasAff (MaybeT m) where
+instance MonadCanvasAff m ⇒ MonadCanvasAff (MaybeT m) where
   liftCanvasAff = lift <<< liftCanvasAff
 
-instance monadCanvasAffRWST ∷
+instance
   ( Monoid w
   , MonadCanvasAff m
   ) ⇒
   MonadCanvasAff (RWST r w s m) where
   liftCanvasAff = lift <<< liftCanvasAff
 
-instance monadCanvasAffStateT ∷ MonadCanvasAff m ⇒ MonadCanvasAff (StateT s m) where
+instance MonadCanvasAff m ⇒ MonadCanvasAff (StateT s m) where
   liftCanvasAff = lift <<< liftCanvasAff
 
-instance monadCanvasAffWriterT ∷
+instance
   ( Monoid w
   , MonadCanvasAff m
   ) ⇒

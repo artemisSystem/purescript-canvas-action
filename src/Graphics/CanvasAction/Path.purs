@@ -101,30 +101,30 @@ data Path2D = Path2D JsPath2D PathData
 
 newtype PathAction a = PathAction (Path2D → Effect (Tuple PathData a))
 
-instance functorPathAction ∷ Functor PathAction where
+instance Functor PathAction where
   map = liftM1
 
-instance applyPathAction ∷ Apply PathAction where
+instance Apply PathAction where
   apply = ap
 
-instance applicativePathAction ∷ Applicative PathAction where
+instance Applicative PathAction where
   pure a = PathAction \(Path2D _ pathData) → pure (Tuple pathData a)
 
-instance bindPathAction ∷ Bind PathAction where
+instance Bind PathAction where
   bind (PathAction act) f = PathAction \path2d@(Path2D path _) → do
     Tuple pathData' a ← act path2d
     case f a of
       PathAction act' → act' (Path2D path pathData')
 
-instance monadPathAction ∷ Monad PathAction
+instance Monad PathAction
 
-instance monadEffectPathAction ∷ MonadEffect PathAction where
+instance MonadEffect PathAction where
   liftEffect f = PathAction \(Path2D _ pathData) → Tuple pathData <$> f
 
-instance semigroupPathAction ∷ Semigroup a ⇒ Semigroup (PathAction a) where
+instance Semigroup a ⇒ Semigroup (PathAction a) where
   append = lift2 append
 
-instance monoidPathAction ∷ Monoid a ⇒ Monoid (PathAction a) where
+instance Monoid a ⇒ Monoid (PathAction a) where
   mempty = pure mempty
 
 isInfiniteOrNaN ∷ Number → Boolean
@@ -369,7 +369,7 @@ foreign import clipImpl ∷ Context2D → JsPath2D → String → Effect Unit
 -- | Enumerates the different fill rules
 data FillRule = Nonzero | Evenodd
 
-derive instance eqFillRule ∷ Eq FillRule
+derive instance Eq FillRule
 
 fillRuleToString ∷ FillRule → String
 fillRuleToString Nonzero = "nonzero"

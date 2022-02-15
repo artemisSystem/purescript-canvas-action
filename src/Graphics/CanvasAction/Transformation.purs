@@ -39,13 +39,13 @@ foreign import data DOMMatrix ∷ Type
 instance showDOMMatrix ∷ Show DOMMatrix where
   show m = "(fromRecord " <> show (toRecord m) <> ")"
 
-instance eqDOMMatrix ∷ Eq DOMMatrix where
+instance Eq DOMMatrix where
   eq m1 m2 = eq (toRecord m1) (toRecord m2)
 
-instance semigroupDOMMatrix ∷ Semigroup DOMMatrix where
+instance Semigroup DOMMatrix where
   append = multiplyDOMMatrix
 
-instance monoidDOMMatrix ∷ Monoid DOMMatrix where
+instance Monoid DOMMatrix where
   mempty = fromRecord { a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: 0.0, f: 0.0 }
 
 type DOMMatrixRecord =
