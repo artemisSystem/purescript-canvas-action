@@ -16,7 +16,6 @@ import Run.Reader (Reader(..), askAt, runReaderAt)
 import Type.Proxy (Proxy(..))
 import Type.Row (type (+))
 
-
 type CTX r = (ctx ∷ Reader Context2D | r)
 
 -- | Proxy for `"ctx"`
@@ -27,19 +26,20 @@ _ctx = Proxy
 runCtx ∷ ∀ r. Context2D → Run (CTX + r) ~> Run r
 runCtx = runReaderAt _ctx
 
-
 -- | Lift a `CanvasAction` into `Run` via the `ctx` and `effect` labels
 liftCanvasAction ∷ ∀ r. CanvasAction ~> Run (CTX + EFFECT + r)
 liftCanvasAction = liftCanvasActionAt _ctx (Proxy ∷ _ "effect")
 
 -- | Lift a `CanvasAction` into `Run` via the provided labels
-liftCanvasActionAt ∷
-  ∀ proxy ctx effect ra rb r
+liftCanvasActionAt
+  ∷ ∀ proxy ctx effect ra rb r
   . IsSymbol ctx
   ⇒ IsSymbol effect
   ⇒ Row.Cons ctx (Reader Context2D) ra r
   ⇒ Row.Cons effect Effect rb r
-  ⇒ proxy ctx → proxy effect → CanvasAction ~> Run r
+  ⇒ proxy ctx
+  → proxy effect
+  → CanvasAction ~> Run r
 liftCanvasActionAt ctxSym effectSym m = do
   ctx ← askAt ctxSym
   lift effectSym (runReaderT m ctx)
@@ -50,8 +50,8 @@ runBaseCanvas = runBaseCanvasAt _ctx (Proxy ∷ _ "effect")
 
 -- | Runs `Reader Context2D` and `Effect` in `CanvasAction` at the provided
 -- | labels
-runBaseCanvasAt ∷
-  ∀ proxy ctx effect r1 r2
+runBaseCanvasAt
+  ∷ ∀ proxy ctx effect r1 r2
   . IsSymbol ctx
   ⇒ IsSymbol effect
   ⇒ Row.Cons ctx (Reader Context2D) () r1
@@ -64,19 +64,20 @@ runBaseCanvasAt ctxSym effectSym = case_
   # on effectSym Effect.liftEffect
   # runRec
 
-
 -- | Lift a `CanvasAff` into `Run` via the `ctx` and `aff` labels
 liftCanvasAff ∷ ∀ r. CanvasAff ~> Run (CTX + AFF + r)
 liftCanvasAff = liftCanvasAffAt _ctx (Proxy ∷ _ "aff")
 
 -- | Lift a `CanvasAff` into `Run` via the provided labels
-liftCanvasAffAt ∷
-  ∀ proxy ctx aff ra rb r
+liftCanvasAffAt
+  ∷ ∀ proxy ctx aff ra rb r
   . IsSymbol ctx
   ⇒ IsSymbol aff
   ⇒ Row.Cons ctx (Reader Context2D) ra r
   ⇒ Row.Cons aff Aff rb r
-  ⇒ proxy ctx → proxy aff → CanvasAff ~> Run r
+  ⇒ proxy ctx
+  → proxy aff
+  → CanvasAff ~> Run r
 liftCanvasAffAt ctxSym affSym m = do
   ctx ← askAt ctxSym
   lift affSym (runReaderT m ctx)
@@ -86,8 +87,8 @@ runBaseCanvasAff ∷ Run (CTX + AFF + ()) ~> CanvasAff
 runBaseCanvasAff = runBaseCanvasAffAt _ctx (Proxy ∷ _ "aff")
 
 -- | Runs `Reader Context2D` and `Aff` in `CanvasAff` at the provided labels
-runBaseCanvasAffAt ∷
-  ∀ proxy ctx aff r1 r2
+runBaseCanvasAffAt
+  ∷ ∀ proxy ctx aff r1 r2
   . IsSymbol ctx
   ⇒ IsSymbol aff
   ⇒ Row.Cons ctx (Reader Context2D) () r1
@@ -107,8 +108,8 @@ runBaseCanvasAff' =
 
 -- | Runs `Reader Context2D`, `Effect`, and `Aff` in `CanvasAff` at the provided
 -- | labels
-runBaseCanvasAffAt' ∷
-  ∀ proxy ctx effect aff r1 r2 r3
+runBaseCanvasAffAt'
+  ∷ ∀ proxy ctx effect aff r1 r2 r3
   . IsSymbol ctx
   ⇒ IsSymbol effect
   ⇒ IsSymbol aff

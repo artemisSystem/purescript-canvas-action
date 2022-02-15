@@ -20,28 +20,25 @@ import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Internal.Types (Event, EventTarget)
 import Web.Internal.FFI (unsafeReadProtoTagged)
 
-
 foreign import devicePixelRatioImpl ∷ Effect Number
 
 devicePixelRatio ∷ ∀ m. MonadEffect m ⇒ m Number
 devicePixelRatio = liftEffect devicePixelRatioImpl
 
-
 foreign import data MediaQueryList ∷ Type
 
-fromEventTarget :: EventTarget -> Maybe MediaQueryList
+fromEventTarget ∷ EventTarget → Maybe MediaQueryList
 fromEventTarget = unsafeReadProtoTagged "MediaQueryList"
 
-toEventTarget :: MediaQueryList -> EventTarget
+toEventTarget ∷ MediaQueryList → EventTarget
 toEventTarget = unsafeCoerce
 
 foreign import matchMedia ∷ String → Effect MediaQueryList
 
-
 foreign import data MediaQueryListEvent ∷ Type
 
-fromEvent :: Event -> Maybe MediaQueryListEvent
+fromEvent ∷ Event → Maybe MediaQueryListEvent
 fromEvent = unsafeReadProtoTagged "MediaQueryListEvent"
 
-toEvent :: MediaQueryListEvent -> Event
+toEvent ∷ MediaQueryListEvent → Event
 toEvent = unsafeCoerce

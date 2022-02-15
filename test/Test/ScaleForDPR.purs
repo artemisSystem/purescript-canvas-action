@@ -1,4 +1,4 @@
-module Test.ScaleForDPR 
+module Test.ScaleForDPR
   ( getDPRChange
   , scaleForDPROnce
   , scaleForDPR
@@ -24,7 +24,6 @@ import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (addEventListener, eventListener, removeEventListener)
 import Web.HTML.HTMLCanvasElement as CanvasElem
 
-
 -- | Resolves with the new devicePixelRatio next time it changes
 getDPRChange ∷ Aff Number
 getDPRChange = makeAff \cb → do
@@ -32,8 +31,9 @@ getDPRChange = makeAff \cb → do
   currentDPR ← devicePixelRatio
   mediaQueryList ← toEventTarget <$> matchMedia do
     "(resolution: " <> show currentDPR <> "dppx)"
-  let removeListener = Ref.read listenerRef >>= traverse_ \listener →
-        removeEventListener (EventType "change") listener false mediaQueryList
+  let
+    removeListener = Ref.read listenerRef >>= traverse_ \listener →
+      removeEventListener (EventType "change") listener false mediaQueryList
   listener ← eventListener \_ → do
     newDPR ← devicePixelRatio
     removeListener

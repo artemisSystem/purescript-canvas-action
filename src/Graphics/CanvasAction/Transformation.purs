@@ -61,7 +61,6 @@ toTransform ∷ DOMMatrix → C.Transform
 toTransform = toRecord >>> \{ a, b, c, d, e, f } →
   { m11: a, m12: b, m21: c, m22: d, m31: e, m32: f }
 
-
 foreign import multiplyDOMMatrix ∷ DOMMatrix → DOMMatrix → DOMMatrix
 
 foreign import invertDOMMatrix ∷ DOMMatrix → DOMMatrix
@@ -73,12 +72,10 @@ fromNumbers a b c d e f = fromRecord { a, b, c, d, e, f }
 
 foreign import toRecord ∷ DOMMatrix → DOMMatrixRecord
 
-
 transform ∷ ∀ m. MonadCanvasAction m ⇒ DOMMatrix → m Unit
 transform matrix = do
   ctx ← getCtx
   liftEffect (C.transform ctx (toTransform matrix))
-
 
 foreign import getTransformImpl ∷ Context2D → Effect DOMMatrix
 
@@ -134,8 +131,9 @@ rotate theta = fromNumbers cos sin (-sin) cos 0.0 0.0
 -- | Constructs a DOMMatrix that applies a rotation around the specified point
 rotateAround ∷ ∀ p. ToPos Number p ⇒ p → Radians → DOMMatrix
 rotateAround pos theta = translate x y <> rotate theta <> translate (-x) (-y)
-  where (x >< y) = toPos pos
+  where
+  (x >< y) = toPos pos
 
 -- | Constructs a DOMMatrix that applies a skewing
 skew ∷ Number → Number → DOMMatrix
-skew sx sy =  fromNumbers 1.0 sy sx 1.0 0.0 0.0
+skew sx sy = fromNumbers 1.0 sy sx 1.0 0.0 0.0

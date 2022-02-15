@@ -3,6 +3,7 @@
   "scripts": {
     "build": "npx spago build",
     "repl": "npx spago -x dev.dhall repl",
+    "format": "purs-tidy format-in-place src test",
     "serve-example": "npx parcel serve --open --dist-dir dev test/Test/$npm_config_module/index.html",
     "watch-example": "npx spago -x dev.dhall build --watch",
     "example": "npx spago -x dev.dhall build && npx concurrently -k -n 'parcel,spago' -c 'green,blue' npm:serve-example npm:watch-example",
@@ -11,12 +12,14 @@
     "example:Pattern": "npm run example --module=Pattern"
   },
   "devDependencies": {
-    "bower": "^1.8.12",
-    "concurrently": "^6.1.0",
-    "parcel": "^2.0.0-beta.2",
+    "bower": "^1.8.13",
+    "concurrently": "^7.0.0",
+    "npm-upgrade": "^3.1.0",
+    "parcel": "^2.3.1",
     "pscid": "^2.9.3",
     "pulp": "^15.0.0",
-    "purescript": "^0.14.1",
-    "spago": "^0.20.3"
+    "purescript": "^0.14.5",
+    "purs-tidy": "^0.7.0",
+    "spago": "^0.20.7"
   }
 }

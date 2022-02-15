@@ -2,7 +2,6 @@ module Test.SemigroupDo where
 
 import Prelude
 
-
 bind ∷ ∀ m. Semigroup m ⇒ m → (Unit → m) → m
 bind a b = a <> b unit
 

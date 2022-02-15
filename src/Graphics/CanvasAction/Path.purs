@@ -56,7 +56,6 @@ import Graphics.CanvasAction (class CanvasStyle, class MonadCanvasAction, filled
 import Graphics.CanvasAction.Transformation (DOMMatrix, rotate, toRecord, transformPoint, translate)
 import Math (Radians, cos, sin, tau)
 
-
 -- | A JavaScript `Path2D` Object
 foreign import data JsPath2D ∷ Type
 
@@ -64,17 +63,29 @@ foreign import addPathImpl ∷ JsPath2D → DOMMatrix → JsPath2D → Effect Un
 foreign import closePathImpl ∷ JsPath2D → Effect Unit
 foreign import moveToImpl ∷ Number → Number → JsPath2D → Effect Unit
 foreign import lineToImpl ∷ Number → Number → JsPath2D → Effect Unit
-foreign import bezierCurveToImpl ∷
-  Number → Number → Number → Number → Number → Number → JsPath2D → Effect Unit
-foreign import quadraticCurveToImpl ∷
-  Number → Number → Number → Number → JsPath2D → Effect Unit
-foreign import arcToImpl ∷
-  Number → Number → Number → Number → Number → JsPath2D → Effect Unit
-foreign import ellipseImpl ∷
-    Number → Number → Number → Number → Number
-  → Radians → Radians → Boolean → JsPath2D → Effect Unit
-foreign import rectImpl ∷
-  Number → Number → Number → Number → JsPath2D → Effect Unit
+foreign import bezierCurveToImpl
+  ∷ Number → Number → Number → Number → Number → Number → JsPath2D → Effect Unit
+
+foreign import quadraticCurveToImpl
+  ∷ Number → Number → Number → Number → JsPath2D → Effect Unit
+
+foreign import arcToImpl
+  ∷ Number → Number → Number → Number → Number → JsPath2D → Effect Unit
+
+foreign import ellipseImpl
+  ∷ Number
+  → Number
+  → Number
+  → Number
+  → Number
+  → Radians
+  → Radians
+  → Boolean
+  → JsPath2D
+  → Effect Unit
+
+foreign import rectImpl
+  ∷ Number → Number → Number → Number → JsPath2D → Effect Unit
 
 -- | A record with data for the start of the current subpath and the location of
 -- | the path cursor
@@ -87,7 +98,6 @@ type PathData =
 -- | constructor is not exported because that would allow for desync between the
 -- | JS `Path2D` and its data.
 data Path2D = Path2D JsPath2D PathData
-
 
 newtype PathAction a = PathAction (Path2D → Effect (Tuple PathData a))
 
@@ -117,7 +127,6 @@ instance semigroupPathAction ∷ Semigroup a ⇒ Semigroup (PathAction a) where
 instance monoidPathAction ∷ Monoid a ⇒ Monoid (PathAction a) where
   mempty = pure mempty
 
-
 isInfiniteOrNaN ∷ Number → Boolean
 isInfiniteOrNaN n = not isFinite n || isNaN n
 
@@ -131,9 +140,8 @@ getSubpathStart ∷ PathAction (Maybe (Vector2 Number))
 getSubpathStart = PathAction \(Path2D _ pathData) →
   pure (Tuple pathData pathData.subpathStart)
 
-
-lineToHelper ∷
-  Boolean → (JsPath2D → Effect Unit) → Vector2 Number → PathAction Unit
+lineToHelper
+  ∷ Boolean → (JsPath2D → Effect Unit) → Vector2 Number → PathAction Unit
 lineToHelper invalid effect end = PathAction \(Path2D path pathData) →
   case invalid, pathData.subpathStart of
     true, _ → pure (Tuple pathData unit)
@@ -144,11 +152,10 @@ lineToHelper invalid effect end = PathAction \(Path2D path pathData) →
       effect path
       in Tuple (pathData { cursor = end, subpathStart = Just end }) unit
 
-
 -- | Start a new sub-path at the given position
 moveTo ∷ ∀ p. ToPos Number p ⇒ p → PathAction Unit
-moveTo pos = PathAction \(Path2D path pathData) → if invalid
-  then pure (Tuple pathData unit)
+moveTo pos = PathAction \(Path2D path pathData) →
+  if invalid then pure (Tuple pathData unit)
   else ado
     moveToImpl x y path
     in Tuple (pathData { cursor = p, subpathStart = Just p }) unit
@@ -178,7 +185,7 @@ quadraticCurveTo cp' pos =
   where
   p@(x >< y) = toPos pos
   cp@(cpx >< cpy) = toPos cp'
-  invalid = any (any isInfiniteOrNaN) [p, cp]
+  invalid = any (any isInfiniteOrNaN) [ p, cp ]
 
 -- | Adds a cubic Bézier curve to the path. The first two points are control
 -- | points and the third one is the end point.
@@ -189,7 +196,7 @@ bezierCurveTo cp1' cp2' pos =
   p@(x >< y) = toPos pos
   cp1@(cp1x >< cp1y) = toPos cp1'
   cp2@(cp2x >< cp2y) = toPos cp2'
-  invalid = any (any isInfiniteOrNaN) [p, cp1, cp2]
+  invalid = any (any isInfiniteOrNaN) [ p, cp1, cp2 ]
 
 -- The following functions are for internal use, for calculating `ArcData`
 
@@ -212,8 +219,8 @@ swap ∷ Vector2 Number → Vector2 Number
 swap (x >< y) = (y >< x)
 
 -- | Finds the intersection between two lines
-intersect ∷
-  (Number → Vector2 Number) → (Number → Vector2 Number) → Vector2 Number
+intersect
+  ∷ (Number → Vector2 Number) → (Number → Vector2 Number) → Vector2 Number
 intersect l1 l2 = do
   let
     l1o@(x1 >< y1) = l1 0.0
@@ -224,27 +231,31 @@ intersect l1 l2 = do
   l1 t1
 
 -- https://stackoverflow.com/questions/51223685/create-circle-tangent-to-two-lines-with-radius-r-geometry
-getArcData ∷
-  Vector2 Number → Vector2 Number → Vector2 Number → Number → ArcData
-getArcData p0 p1 p2 radius = if colinear p0 p1 p2 || radius == 0.0
-    then { start: p1, end: p1, center: p1, radius, nonZero: false }
-    else do
-  let
-    rot90 = swap >>> ((identity >< negate) <*> _)
-    p01Vel = normalize (p1 - p0)
-    p01 t = p0 + map (t * _) p01Vel
-    p21Vel = normalize (p1 - p2)
-    p21 t = p2 + map (t * _) p21Vel
-    p01shiftVector = rot90 (p01Vel * pure radius)
-      # if isLeftOf p0 p1 p2 then identity else map negate
-    p01shifted t = p01 t + p01shiftVector
-    p21shiftVector = rot90 (p21Vel * pure radius)
-      # if isLeftOf p2 p1 p0 then identity else map negate
-    p21shifted t = p21 t + p21shiftVector
-    center = intersect p01shifted p21shifted
-  { start: center - p01shiftVector, end: center - p21shiftVector
-  , center, radius, nonZero: true
-  }
+getArcData
+  ∷ Vector2 Number → Vector2 Number → Vector2 Number → Number → ArcData
+getArcData p0 p1 p2 radius =
+  if colinear p0 p1 p2 || radius == 0.0 then
+    { start: p1, end: p1, center: p1, radius, nonZero: false }
+  else do
+    let
+      rot90 = swap >>> ((identity >< negate) <*> _)
+      p01Vel = normalize (p1 - p0)
+      p01 t = p0 + map (t * _) p01Vel
+      p21Vel = normalize (p1 - p2)
+      p21 t = p2 + map (t * _) p21Vel
+      p01shiftVector = rot90 (p01Vel * pure radius)
+        # if isLeftOf p0 p1 p2 then identity else map negate
+      p01shifted t = p01 t + p01shiftVector
+      p21shiftVector = rot90 (p21Vel * pure radius)
+        # if isLeftOf p2 p1 p0 then identity else map negate
+      p21shifted t = p21 t + p21shiftVector
+      center = intersect p01shifted p21shifted
+    { start: center - p01shiftVector
+    , end: center - p21shiftVector
+    , center
+    , radius
+    , nonZero: true
+    }
 
 type ArcData =
   { start ∷ Vector2 Number
@@ -263,49 +274,67 @@ arcTo p1' p2' radius = do
   where
   p1@(p1x >< p1y) = toPos p1'
   p2@(p2x >< p2y) = toPos p2'
-  invalid = any isInfiniteOrNaN [p1x, p1y, p2x, p2y, radius] || radius < 0.0
+  invalid = any isInfiniteOrNaN [ p1x, p1y, p2x, p2y, radius ] || radius < 0.0
 
 arcTo_ ∷ ∀ p. ToPos Number p ⇒ p → p → Number → PathAction Unit
 arcTo_ p1 p2 radius = void (arcTo p1 p2 radius)
 
-ellipse ∷
-  ∀ p
+ellipse
+  ∷ ∀ p
   . ToPos Number p
-  ⇒ p → Number → Number → Radians → Radians → Radians
-  → Boolean → PathAction Unit
+  ⇒ p
+  → Number
+  → Number
+  → Radians
+  → Radians
+  → Radians
+  → Boolean
+  → PathAction Unit
 ellipse center radiusX radiusY rotation startAngle endAngle anticlockwise =
-  PathAction \(Path2D path pathData) → if invalid
-    then pure (Tuple pathData unit)
+  PathAction \(Path2D path pathData) →
+    if invalid then pure (Tuple pathData unit)
     else ado
       ellipseImpl x y radiusX radiusY rotation
-        startAngle endAngle anticlockwise path
+        startAngle
+        endAngle
+        anticlockwise
+        path
       in Tuple (pathData { cursor = endPos }) unit
   where
   (x >< y) = toPos center
   invalid = any isInfiniteOrNaN
-    [x, y, radiusX, radiusY, rotation, startAngle, endAngle]
+    [ x, y, radiusX, radiusY, rotation, startAngle, endAngle ]
   anglePoint angle = transformPoint (translate x y <> rotate rotation)
     (radiusX * cos angle >< radiusY * sin angle)
-  endPos = anglePoint if anticlockwise
-    then if endAngle-startAngle >= tau then startAngle else endAngle
-    else if startAngle-endAngle >= tau then startAngle else endAngle
+  endPos = anglePoint
+    if anticlockwise then
+      if endAngle - startAngle >= tau then startAngle else endAngle
+    else if startAngle - endAngle >= tau then startAngle
+    else endAngle
 
-arc ∷
-  ∀ p
+arc
+  ∷ ∀ p
   . ToPos Number p
-  ⇒ p → Number → Radians → Radians → Boolean → PathAction Unit
+  ⇒ p
+  → Number
+  → Radians
+  → Radians
+  → Boolean
+  → PathAction Unit
 arc center radius = ellipse center radius radius 0.0
 
 rect ∷ ∀ r. ToRegion Number r ⇒ r → PathAction Unit
-rect region = if invalid then pure unit else do
-  moveTo (x >< y)
-  lineTo (x + width >< y)
-  lineTo (x + width >< y + height)
-  lineTo (x >< y + height)
-  closePath
+rect region =
+  if invalid then pure unit
+  else do
+    moveTo (x >< y)
+    lineTo (x + width >< y)
+    lineTo (x + width >< y + height)
+    lineTo (x >< y + height)
+    closePath
   where
-    { x, y, width, height } = convertRegion region ∷ Rectangle
-    invalid = any isInfiniteOrNaN [x, y, width, height]
+  { x, y, width, height } = convertRegion region ∷ Rectangle
+  invalid = any isInfiniteOrNaN [ x, y, width, height ]
 
 -- | Add the contents of a `Path2D` to the current path
 addPath ∷ Path2D → PathAction Unit
@@ -320,12 +349,13 @@ addPath = addPath' mempty
 addPath' ∷ DOMMatrix → Path2D → PathAction Unit
 addPath' matrix (Path2D path2 { cursor, subpathStart }) =
   PathAction \(Path2D path pathData) →
-    if invalid then pure (Tuple pathData unit) else ado
+    if invalid then pure (Tuple pathData unit)
+    else ado
       addPathImpl path2 matrix path
       in Tuple pathData2' unit
   where
   { a, b, c, d, e, f } = toRecord matrix
-  invalid = any isInfiniteOrNaN [a, b, c, d, e, f]
+  invalid = any isInfiniteOrNaN [ a, b, c, d, e, f ]
   pathData2' =
     { cursor: transformPoint matrix cursor
     , subpathStart: transformPoint matrix <$> subpathStart
@@ -363,8 +393,8 @@ fill rule (Path2D path _) = getCtx >>= \ctx →
   liftEffect (fillImpl ctx path (fillRuleToString rule))
 
 -- | Fill a `Path2D` with the given style
-fillWith ∷
-  ∀ m r. MonadCanvasAction m ⇒ CanvasStyle r ⇒ r → FillRule → Path2D → m Unit
+fillWith
+  ∷ ∀ m r. MonadCanvasAction m ⇒ CanvasStyle r ⇒ r → FillRule → Path2D → m Unit
 fillWith style rule path = filled style (fill rule path)
 
 -- | Stroke a `Path2D`
@@ -380,13 +410,13 @@ clip ∷ ∀ m. MonadCanvasAction m ⇒ FillRule → Path2D → m Unit
 clip rule (Path2D path _) = getCtx >>= \ctx →
   liftEffect (clipImpl ctx path (fillRuleToString rule))
 
-
 -- | Move the cursor to a new position relative to its old position
 moveBy ∷ ∀ p. ToPos Number p ⇒ p → PathAction Unit
 moveBy pos = do
   cursor ← getCursor
   moveTo (cursor + p)
-  where p = toPos pos
+  where
+  p = toPos pos
 
 -- | Draw a line from the last point in the sub-path to the given position,
 -- | measured relative to its old position
@@ -394,7 +424,8 @@ lineBy ∷ ∀ p. ToPos Number p ⇒ p → PathAction Unit
 lineBy pos = do
   cursor ← getCursor
   lineTo (cursor + p)
-  where p = toPos pos
+  where
+  p = toPos pos
 
 -- | Move to the first point and draw a line to the second point
 line ∷ ∀ p. ToPos Number p ⇒ p → p → PathAction Unit
@@ -418,7 +449,8 @@ circle ∷ ∀ p. ToPos Number p ⇒ p → Number → PathAction Unit
 circle pos radius = do
   moveTo (x + radius >< y)
   arc pos radius 0.0 tau false
-  where (x >< y) = toPos pos
+  where
+  (x >< y) = toPos pos
 
 -- | Like `arcTo`, but the first point is relative to the cursor position, and
 -- | the second point is relative to the first point

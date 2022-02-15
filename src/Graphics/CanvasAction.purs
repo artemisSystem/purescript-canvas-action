@@ -145,11 +145,11 @@ import Web.HTML.HTMLCanvasElement (fromElement, HTMLCanvasElement)
 import Web.HTML.HTMLDocument (toDocument, toParentNode) as HTMLDocument
 import Web.HTML.Window (document)
 
-
 createCanvas_ ∷ Document → Effect HTMLCanvasElement
 createCanvas_ = createElement "canvas" >>> map unsafeCoerceElem
-  where unsafeCoerceElem ∷ Element → HTMLCanvasElement
-        unsafeCoerceElem = unsafeCoerce
+  where
+  unsafeCoerceElem ∷ Element → HTMLCanvasElement
+  unsafeCoerceElem = unsafeCoerce
 
 coerceHTMLCanvas ∷ HTMLCanvasElement → CanvasElement
 coerceHTMLCanvas = unsafeCoerce
@@ -157,13 +157,15 @@ coerceHTMLCanvas = unsafeCoerce
 coerceCanvas ∷ CanvasElement → HTMLCanvasElement
 coerceCanvas = unsafeCoerce
 
-
 -- | Same as `createCanvas`, but allows for specifying the `Document` object to
 -- | create the canvas with
-createCanvas' ∷
-  ∀ m s
-  . MonadEffect m ⇒ ToSize Number s
-  ⇒ Document → s → m HTMLCanvasElement
+createCanvas'
+  ∷ ∀ m s
+  . MonadEffect m
+  ⇒ ToSize Number s
+  ⇒ Document
+  → s
+  → m HTMLCanvasElement
 createCanvas' doc size = liftEffect do
   let (width >< height) = toSize size
   canvas ← createCanvas_ doc
@@ -180,8 +182,8 @@ getCanvasElementById ∷ ∀ m. MonadEffect m ⇒ String → m (Maybe HTMLCanvas
 getCanvasElementById id = (map <<< map) coerceCanvas $
   liftEffect (C.getCanvasElementById id)
 
-querySelectCanvas ∷
-  ∀ m. MonadEffect m ⇒ QuerySelector → m (Maybe HTMLCanvasElement)
+querySelectCanvas
+  ∷ ∀ m. MonadEffect m ⇒ QuerySelector → m (Maybe HTMLCanvasElement)
 querySelectCanvas canvas = liftEffect do
   doc ← window >>= document <#> HTMLDocument.toParentNode
   querySelector canvas doc <#> (=<<) fromElement
@@ -218,10 +220,13 @@ querySelectContext2D = querySelectCanvas >=> traverse getContext2D
 |     circle (350.0 >< 350.0)  50.0
 | ```
 -}
-runActionOffscreen ∷
-  ∀ m a s
+runActionOffscreen
+  ∷ ∀ m a s
   . MonadEffect m
-  ⇒ ToSize Number s ⇒ s → CanvasAction a → m a
+  ⇒ ToSize Number s
+  ⇒ s
+  → CanvasAction a
+  → m a
 runActionOffscreen size action = do
   ctx ← createCanvas size >>= getContext2D
   runAction ctx action
@@ -240,8 +245,11 @@ runActionOffscreen' action = do
 -- | returns an `Effect`.
 asEffect
   ∷ ∀ m f a
-  . Functor f ⇒ MonadEffect m
-  ⇒ Context2D → f (CanvasAction a) → f (m a)
+  . Functor f
+  ⇒ MonadEffect m
+  ⇒ Context2D
+  → f (CanvasAction a)
+  → f (m a)
 asEffect ctx = map (runAction ctx)
 
 launchCanvasAff ∷ ∀ a. Context2D → CanvasAff a → Effect (Fiber a)
@@ -250,50 +258,50 @@ launchCanvasAff ctx aff = launchAff (runCanvasAff ctx aff)
 launchCanvasAff_ ∷ ∀ a. Context2D → CanvasAff a → Effect Unit
 launchCanvasAff_ ctx aff = void (launchCanvasAff ctx aff)
 
-
-withCtx ∷ ∀ m a . MonadCanvasAction m ⇒ (Context2D → Effect a) → m a
+withCtx ∷ ∀ m a. MonadCanvasAction m ⇒ (Context2D → Effect a) → m a
 withCtx = liftCanvasAction <<< ReaderT
 
-withCtx1 ∷ ∀ m a b. MonadCanvasAction m ⇒ (Context2D → a → Effect b) → (a → m b)
+withCtx1
+  ∷ ∀ m a b. MonadCanvasAction m ⇒ (Context2D → a → Effect b) → (a → m b)
 withCtx1 action a = withCtx \ctx → action ctx a
 
-withCtx2 ∷
-  ∀ m a b c
+withCtx2
+  ∷ ∀ m a b c
   . MonadCanvasAction m
   ⇒ (Context2D → a → b → Effect c)
   → (a → b → m c)
 withCtx2 action a b = withCtx \ctx → action ctx a b
 
-withCtx3 ∷
-  ∀ m a b c d
+withCtx3
+  ∷ ∀ m a b c d
   . MonadCanvasAction m
   ⇒ (Context2D → a → b → c → Effect d)
   → (a → b → c → m d)
 withCtx3 action a b c = withCtx \ctx → action ctx a b c
 
-withCtx4 ∷
-  ∀ m a b c d e
+withCtx4
+  ∷ ∀ m a b c d e
   . MonadCanvasAction m
   ⇒ (Context2D → a → b → c → d → Effect e)
   → (a → b → c → d → m e)
 withCtx4 action a b c d = withCtx \ctx → action ctx a b c d
 
-withCtx5 ∷
-  ∀ m a b c d e f
+withCtx5
+  ∷ ∀ m a b c d e f
   . MonadCanvasAction m
   ⇒ (Context2D → a → b → c → d → e → Effect f)
   → (a → b → c → d → e → m f)
 withCtx5 action a b c d e = withCtx \ctx → action ctx a b c d e
 
-withCtx7 ∷
-  ∀ m a b c d e f g h
+withCtx7
+  ∷ ∀ m a b c d e f g h
   . MonadCanvasAction m
   ⇒ (Context2D → a → b → c → d → e → f → g → Effect h)
   → (a → b → c → d → e → f → g → m h)
 withCtx7 action a b c d e f g = withCtx \ctx → action ctx a b c d e f g
 
-withCtx9 ∷
-  ∀ m a b c d e f g h i j
+withCtx9
+  ∷ ∀ m a b c d e f g h i j
   . MonadCanvasAction m
   ⇒ (Context2D → a → b → c → d → e → f → g → h → i → Effect j)
   → (a → b → c → d → e → f → g → h → i → m j)
@@ -309,13 +317,12 @@ withFull action = getDimensions >>= (toSize >>> toRegion >>> action)
 -- | From a function taking some position and returning a `MonadCanvasAction`,
 -- | make a `MonadCanvasAction` that calls the original function with the center
 -- | of the canvas as a position.
-withMidPos ∷
-  ∀ m a
+withMidPos
+  ∷ ∀ m a
   . MonadCanvasAction m
   ⇒ (Vector2 Number → m a)
   → m a
 withMidPos action = getDimensions >>= (toSize >>> midPos >>> action)
-
 
 -- | Get the canvas of a `Context2D`
 foreign import getCanvasEffect ∷ Context2D → Effect HTMLCanvasElement
@@ -328,15 +335,13 @@ getCanvas = withCtx getCanvasEffect
 getCtx ∷ ∀ m. MonadCanvasAction m ⇒ m Context2D
 getCtx = withCtx pure
 
-
 withCanvas ∷ ∀ m a. MonadCanvasAction m ⇒ (CanvasElement → Effect a) → m a
 withCanvas action = withCtx \ctx →
   getCanvasEffect ctx <#> coerceHTMLCanvas >>= action
 
-withCanvas1 ∷
-  ∀ m a b. MonadCanvasAction m ⇒ (CanvasElement → a → Effect b) → (a → m b)
+withCanvas1
+  ∷ ∀ m a b. MonadCanvasAction m ⇒ (CanvasElement → a → Effect b) → (a → m b)
 withCanvas1 action a = withCanvas \canv → action canv a
-
 
 -- | Fill a rectangular area
 fillRect ∷ ∀ m r. MonadCanvasAction m ⇒ ToRegion Number r ⇒ r → m Unit
@@ -362,7 +367,6 @@ clearRect = withCtx1 C.clearRect <<< convertRegion
 clearRectFull ∷ ∀ m. MonadCanvasAction m ⇒ m Unit
 clearRectFull = withFull clearRect
 
-
 -- | A value that can be passed to `setFillStyle` and similar functions.
 -- | Runtime representation should be either a `String`, a `CanvasGradient` or
 -- | a `CanvasPattern`.
@@ -377,7 +381,7 @@ foreign import styleIsPattern ∷ CanvasStyleRep → Boolean
 unsafeStyleToX ∷ ∀ a. (CanvasStyleRep → Boolean) → (CanvasStyleRep → Maybe a)
 unsafeStyleToX isCorrect style
   | isCorrect style = Just (unsafeCoerce style)
-  | otherwise       = Nothing
+  | otherwise = Nothing
 
 styleToString ∷ CanvasStyleRep → Maybe String
 styleToString = unsafeStyleToX styleIsString
@@ -418,7 +422,6 @@ instance canvasColorRepString ∷ CanvasColor String where
 instance canvasColorRepColor ∷ CanvasColor Color where
   toColorRep = cssStringRGBA
 
-
 foreign import setFillStyleImpl ∷ Context2D → CanvasStyleRep → Effect Unit
 
 setFillStyle ∷ ∀ m r. MonadCanvasAction m ⇒ CanvasStyle r ⇒ r → m Unit
@@ -441,16 +444,16 @@ getStrokeStyle = withCtx getStrokeStyleImpl
 
 -- | Run a `MonadCanvasAction` with the given fillStyle, resetting it to the
 -- | previous value after
-filled ∷
-  ∀ m a style. MonadCanvasAction m ⇒ CanvasStyle style ⇒ style → m a → m a
+filled
+  ∷ ∀ m a style. MonadCanvasAction m ⇒ CanvasStyle style ⇒ style → m a → m a
 filled style action = do
   old ← getFillStyle
   setFillStyle style *> action <* setFillStyle old
 
 -- | Run a `MonadCanvasAction` with the given strokeStyle, resetting it to the
 -- | previous value after
-stroked ∷
-  ∀ m a style. MonadCanvasAction m ⇒ CanvasStyle style ⇒ style → m a → m a
+stroked
+  ∷ ∀ m a style. MonadCanvasAction m ⇒ CanvasStyle style ⇒ style → m a → m a
 stroked style action = do
   old ← getStrokeStyle
   setStrokeStyle style *> action <* setStrokeStyle old
@@ -473,10 +476,11 @@ setShadowOffsetY = withCtx1 C.setShadowOffsetY
 -- | Set x and y shadow offset at the same time
 setShadowOffset ∷ ∀ m p. MonadCanvasAction m ⇒ ToPos Number p ⇒ p → m Unit
 setShadowOffset offset = setShadowOffsetX x *> setShadowOffsetY y
-  where (x >< y) = toPos offset
+  where
+  (x >< y) = toPos offset
 
-setShadowColor ∷
-  ∀ m color. MonadCanvasAction m ⇒ CanvasColor color ⇒ color → m Unit
+setShadowColor
+  ∷ ∀ m color. MonadCanvasAction m ⇒ CanvasColor color ⇒ color → m Unit
 setShadowColor = withCtx1 C.setShadowColor <<< toColorRep
 
 setMiterLimit ∷ ∀ m. MonadCanvasAction m ⇒ Number → m Unit
@@ -493,7 +497,6 @@ setGlobalCompositeOperation = withCtx1 C.setGlobalCompositeOperation
 
 setGlobalAlpha ∷ ∀ m. MonadCanvasAction m ⇒ Number → m Unit
 setGlobalAlpha = withCtx1 C.setGlobalAlpha
-
 
 getTextAlign ∷ ∀ m. MonadCanvasAction m ⇒ m TextAlign
 getTextAlign = withCtx C.textAlign
@@ -515,15 +518,16 @@ setFont = withCtx1 C.setFont
 
 fillText ∷ ∀ m p. MonadCanvasAction m ⇒ ToPos Number p ⇒ String → p → m Unit
 fillText text pos = withCtx3 C.fillText text x y
-  where (x >< y) = toPos pos
+  where
+  (x >< y) = toPos pos
 
 strokeText ∷ ∀ m p. MonadCanvasAction m ⇒ ToPos Number p ⇒ String → p → m Unit
 strokeText text pos = withCtx3 C.strokeText text x y
-  where (x >< y) = toPos pos
+  where
+  (x >< y) = toPos pos
 
 measureText ∷ ∀ m. MonadCanvasAction m ⇒ String → m TextMetrics
 measureText = withCtx1 C.measureText
-
 
 getDimensions ∷ ∀ m. MonadCanvasAction m ⇒ m Dimensions
 getDimensions = withCanvas C.getCanvasDimensions
@@ -547,18 +551,23 @@ setWidth = withCanvas1 C.setCanvasWidth
 toDataUrl ∷ ∀ m. MonadCanvasAction m ⇒ m String
 toDataUrl = withCanvas C.canvasToDataURL
 
-
 getImageData ∷ ∀ m r. MonadCanvasAction m ⇒ ToRegion Number r ⇒ r → m ImageData
 getImageData region = withCtx4 C.getImageData x y width height
-  where { x, y, width, height } = convertRegion region ∷ Rectangle
+  where
+  { x, y, width, height } = convertRegion region ∷ Rectangle
 
 -- | Render image data on the canvas. The first argument (`p`) is the point on
 -- | the canvas to place the topleft of the data. The second argument (`r`) is
 -- | the region of the `ImageData` to render.
-putImageDataFull ∷
-  ∀ m p r
-  . MonadCanvasAction m ⇒ ToPos Number p ⇒ ToRegion Number r
-  ⇒ p → r → ImageData → m Unit
+putImageDataFull
+  ∷ ∀ m p r
+  . MonadCanvasAction m
+  ⇒ ToPos Number p
+  ⇒ ToRegion Number r
+  ⇒ p
+  → r
+  → ImageData
+  → m Unit
 putImageDataFull dest dirty img =
   withCtx7 C.putImageDataFull img x y dx dy dw dh
   where
@@ -567,44 +576,57 @@ putImageDataFull dest dirty img =
 
 -- | Render image data on the canvas. The first argument (`p`) is the point on
 -- | the canvas to place the topleft of the data.
-putImageData ∷
-  ∀ m p
-  . MonadCanvasAction m ⇒ ToPos Number p
-  ⇒ p → ImageData → m Unit
+putImageData
+  ∷ ∀ m p
+  . MonadCanvasAction m
+  ⇒ ToPos Number p
+  ⇒ p
+  → ImageData
+  → m Unit
 putImageData dest img = withCtx3 C.putImageData img x y
-  where (x >< y) = toPos dest
+  where
+  (x >< y) = toPos dest
 
 createImageData ∷ ∀ m s. MonadCanvasAction m ⇒ ToSize Number s ⇒ s → m ImageData
 createImageData size = withCtx2 C.createImageData w h
-  where (w >< h) = toSize size
+  where
+  (w >< h) = toSize size
 
 createImageDataCopy ∷ ∀ m. MonadCanvasAction m ⇒ ImageData → m ImageData
 createImageDataCopy = withCtx1 C.createImageDataCopy
 
-
 imageSource ∷ ∀ m. MonadCanvasAction m ⇒ m CanvasImageSource
 imageSource = withCanvas $ pure <<< C.canvasElementToImageSource
 
-drawImage ∷
-  ∀ m p. MonadCanvasAction m ⇒ ToPos Number p ⇒ p → CanvasImageSource → m Unit
+drawImage
+  ∷ ∀ m p. MonadCanvasAction m ⇒ ToPos Number p ⇒ p → CanvasImageSource → m Unit
 drawImage pos img = withCtx3 C.drawImage img x y
-  where (x >< y) = toPos pos
+  where
+  (x >< y) = toPos pos
 
 -- | Draw an image, scaled to fit the provided region
-drawImageScale ∷
-  ∀ m r
-  . MonadCanvasAction m ⇒ ToRegion Number r
-  ⇒ r → CanvasImageSource → m Unit
+drawImageScale
+  ∷ ∀ m r
+  . MonadCanvasAction m
+  ⇒ ToRegion Number r
+  ⇒ r
+  → CanvasImageSource
+  → m Unit
 drawImageScale dirty img = withCtx5 C.drawImageScale img x y w h
-  where (Rect (x >< y) (w >< h)) = toRegion dirty
+  where
+  (Rect (x >< y) (w >< h)) = toRegion dirty
 
 -- | Draw an image on the canvas. The first arugment is the region of the source
 -- | image to draw, and the second argument is the region on the canvas to draw
 -- | it in.
-drawImageFull ∷
-  ∀ m r
-  . MonadCanvasAction m ⇒ ToRegion Number r
-  ⇒ r → r → CanvasImageSource → m Unit
+drawImageFull
+  ∷ ∀ m r
+  . MonadCanvasAction m
+  ⇒ ToRegion Number r
+  ⇒ r
+  → r
+  → CanvasImageSource
+  → m Unit
 drawImageFull source dirty img =
   withCtx9 C.drawImageFull img sx sy sw sh dx dy dw dh
   where
@@ -613,16 +635,22 @@ drawImageFull source dirty img =
 
 -- | Asynchronously load an image file by specifying its path and a callback
 -- | `Effect Unit`.
-tryLoadImage' ∷
-  ∀ m. MonadEffect m ⇒ String → (Maybe CanvasImageSource → Effect Unit) → m Unit
+tryLoadImage'
+  ∷ ∀ m
+  . MonadEffect m
+  ⇒ String
+  → (Maybe CanvasImageSource → Effect Unit)
+  → m Unit
 tryLoadImage' path action = liftEffect $ C.tryLoadImage path action
 
 -- | Asynchronously load an image file by specifying its path and a callback
 -- | `CanvasAction Unit`.
-tryLoadImage ∷ 
-  ∀ m
+tryLoadImage
+  ∷ ∀ m
   . MonadCanvasAction m
-  ⇒ String → (Maybe CanvasImageSource → CanvasAction Unit) → m Unit
+  ⇒ String
+  → (Maybe CanvasImageSource → CanvasAction Unit)
+  → m Unit
 tryLoadImage path action = do
   ctx ← liftCanvasAction ask
   tryLoadImage' path (runAction ctx <<< action)
@@ -649,20 +677,26 @@ foreign import getImageSmoothingImpl ∷ Context2D → Effect Boolean
 getImageSmoothing ∷ ∀ m. MonadCanvasAction m ⇒ m Boolean
 getImageSmoothing = withCtx getImageSmoothingImpl
 
-
 -- | Create a canvas pattern from an image, which can be used as a fill- or
 -- | strokeStyle
-createPattern ∷
-  ∀ m. MonadCanvasAction m ⇒ CanvasImageSource → PatternRepeat → m CanvasPattern
+createPattern
+  ∷ ∀ m
+  . MonadCanvasAction m
+  ⇒ CanvasImageSource
+  → PatternRepeat
+  → m CanvasPattern
 createPattern = withCtx2 C.createPattern
-
 
 -- | Create a linear gradient from a start point, end point, and a foldable of
 -- | color stops.
-linearGradient ∷
-  ∀ m color f
-  . MonadCanvasAction m ⇒ CanvasColor color ⇒ Foldable f
-  ⇒ LinearGradient → f (Tuple Number color) → m CanvasGradient
+linearGradient
+  ∷ ∀ m color f
+  . MonadCanvasAction m
+  ⇒ CanvasColor color
+  ⇒ Foldable f
+  ⇒ LinearGradient
+  → f (Tuple Number color)
+  → m CanvasGradient
 linearGradient grad cols = do
   canvasGradient ← createLinearGradient grad
   for_ cols \(Tuple n col) → addColorStop canvasGradient n col
@@ -670,10 +704,14 @@ linearGradient grad cols = do
 
 -- | Create a radial gradient from a starting circle, ending circle, and a
 -- | foldable of color stops.
-radialGradient ∷
-  ∀ m color f
-  . MonadCanvasAction m ⇒ CanvasColor color ⇒ Foldable f
-  ⇒ RadialGradient → f (Tuple Number color) → m CanvasGradient
+radialGradient
+  ∷ ∀ m color f
+  . MonadCanvasAction m
+  ⇒ CanvasColor color
+  ⇒ Foldable f
+  ⇒ RadialGradient
+  → f (Tuple Number color)
+  → m CanvasGradient
 radialGradient grad cols = do
   canvasGradient ← createRadialGradient grad
   for_ cols \(Tuple n col) → addColorStop canvasGradient n col
@@ -681,25 +719,28 @@ radialGradient grad cols = do
 
 -- | Constructs a blank linear `CanvasGradient` that can be modified with
 -- | `addColorStop`.
-createLinearGradient ∷
-  ∀ m. MonadCanvasAction m ⇒ LinearGradient → m CanvasGradient
+createLinearGradient
+  ∷ ∀ m. MonadCanvasAction m ⇒ LinearGradient → m CanvasGradient
 createLinearGradient = withCtx1 C.createLinearGradient
 
 -- | Constructs a blank radial `CanvasGradient` that can be modified with
 -- | `addColorStop`.
-createRadialGradient ∷
-  ∀ m. MonadCanvasAction m ⇒ RadialGradient → m CanvasGradient
+createRadialGradient
+  ∷ ∀ m. MonadCanvasAction m ⇒ RadialGradient → m CanvasGradient
 createRadialGradient = withCtx1 C.createRadialGradient
 
 -- | Note: Mutates the original `CanvasGradient` and returns `Unit`.
 -- | It is recommended to construct gradients with `linearGradient` and
 -- | `radialGradient` instead.
-addColorStop ∷
-  ∀ m color
-  . MonadEffect m ⇒ CanvasColor color
-  ⇒ CanvasGradient → Number → color → m Unit
+addColorStop
+  ∷ ∀ m color
+  . MonadEffect m
+  ⇒ CanvasColor color
+  ⇒ CanvasGradient
+  → Number
+  → color
+  → m Unit
 addColorStop grad n col = liftEffect $ C.addColorStop grad n (toColorRep col)
-
 
 -- | Saves the context, see [`save` on MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/save)
 save ∷ ∀ m. MonadCanvasAction m ⇒ m Unit

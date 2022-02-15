@@ -10,7 +10,6 @@ import Graphics.CanvasAction (class MonadCanvasAction, Context2D, PatternRepeat(
 import Graphics.CanvasAction.Path (FillRule(..), circle, fillWith, runPath)
 import Test.ScaleForDPR (scaleForDPR)
 
-
 setup ∷ ∀ m. MonadCanvasAction m ⇒ m Unit
 setup = setImageSmoothing false
 
@@ -23,10 +22,10 @@ action = do
     imageSource >>= (_ `createPattern` Repeat)
   (fillWith pattern Nonzero <=< runPath) do
     circle (200.0 >< 200.0) 175.0
-    circle ( 50.0 ><  50.0)  50.0
-    circle ( 50.0 >< 350.0)  50.0
-    circle (350.0 ><  50.0)  50.0
-    circle (350.0 >< 350.0)  50.0
+    circle (50.0 >< 50.0) 50.0
+    circle (50.0 >< 350.0) 50.0
+    circle (350.0 >< 50.0) 50.0
+    circle (350.0 >< 350.0) 50.0
 
 getCtx ∷ String → Effect Context2D
 getCtx id = getCanvasElementById id >>= case _ of

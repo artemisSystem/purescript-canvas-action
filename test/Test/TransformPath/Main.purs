@@ -14,10 +14,10 @@ import Graphics.CanvasAction.Transformation (rotate, transform, transformedBy, t
 import Math (tau)
 import Test.ScaleForDPR (scaleForDPR)
 
-
 centeredRect ∷ Vector2 Number → Vector2 Number → Rect Number
 centeredRect center size = Rect pos size
-  where pos = center - size / pure 2.0
+  where
+  pos = center - size / pure 2.0
 
 roundedRectangle ∷ Rect Number → Number → PathAction Unit
 roundedRectangle (Rect (x >< y) (width >< height)) radius = do
@@ -27,10 +27,14 @@ roundedRectangle (Rect (x >< y) (width >< height)) radius = do
   arcBy_ (-width + radius >< 0.0) (0.0 >< -radius) radius
   arcBy_ (0.0 >< -height + radius) (radius >< 0.0) radius
 
-drawRoundedRectangle ∷
-  ∀ m color
-  . CanvasStyle color ⇒ MonadCanvasAction m
-  ⇒ color → Rect Number → Number → m Unit
+drawRoundedRectangle
+  ∷ ∀ m color
+  . CanvasStyle color
+  ⇒ MonadCanvasAction m
+  ⇒ color
+  → Rect Number
+  → Number
+  → m Unit
 drawRoundedRectangle color rect radius = do
   path ← runPath (roundedRectangle rect radius)
   filled color (fill Nonzero path)
@@ -47,7 +51,8 @@ action = forWithIndex_ colors \i color → do
   let size = pure (300.0 - toNumber i * 50.0)
   transformedBy (rotate (tau / 30.0 * toNumber i)) do
     drawRoundedRectangle color (centeredRect zero size) 20.0
-  where colors = ["#faa", "#ffa", "#afa", "#aff", "#aaf", "#faf"]
+  where
+  colors = [ "#faa", "#ffa", "#afa", "#aff", "#aaf", "#faf" ]
 
 getCtx ∷ String → Effect Context2D
 getCtx id = getCanvasElementById id >>= case _ of
