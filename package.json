@@ -1,15 +1,15 @@
 {
   "private": true,
   "scripts": {
-    "build": "npx spago build",
-    "repl": "npx spago -x dev.dhall repl",
-    "format": "purs-tidy format-in-place src test",
-    "serve-example": "npx parcel serve --open --dist-dir dev test/Test/$npm_config_module/index.html",
-    "watch-example": "npx spago -x dev.dhall build --watch",
-    "example": "npx spago -x dev.dhall build && npx concurrently -k -n 'parcel,spago' -c 'green,blue' npm:serve-example npm:watch-example",
-    "example:Run": "npm run example --module=Run",
-    "example:TransformPath": "npm run example --module=TransformPath",
-    "example:Pattern": "npm run example --module=Pattern"
+    "build": "spago build",
+    "build:examples": "spago -x dev.dhall build",
+    "watch:examples": "spago -x dev.dhall watch",
+    "repl": "spago -x dev.dhall repl",
+    "format": "purs-tidy format-in-place src examples",
+    "serve-example": "npm run build:examples && parcel serve --open --dist-dir dev examples/Example/$npm_config_module/index.html",
+    "example:Run": "npm run serve-example --module=Run",
+    "example:TransformPath": "npm run serve-example --module=TransformPath",
+    "example:Pattern": "npm run serve-example --module=Pattern"
   },
   "devDependencies": {
     "bower": "^1.8.13",

@@ -1,4 +1,4 @@
-module Test.ScaleForDPR
+module Example.ScaleForDPR
   ( getDPRChange
   , scaleForDPROnce
   , scaleForDPR

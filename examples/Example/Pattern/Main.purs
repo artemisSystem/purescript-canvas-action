@@ -1,4 +1,4 @@
-module Test.Pattern.Main where
+module Example.Pattern.Main where
 
 import Prelude
 
@@ -8,7 +8,7 @@ import Effect (Effect)
 import Effect.Exception (throw)
 import Graphics.CanvasAction (class MonadCanvasAction, Context2D, PatternRepeat(..), createPattern, fillRect, fillRectFull, filled, getCanvasElementById, getContext2D, imageSource, launchCanvasAff_, runActionOffscreen, setImageSmoothing)
 import Graphics.CanvasAction.Path (FillRule(..), circle, fillWith, runPath)
-import Test.ScaleForDPR (scaleForDPR)
+import Example.ScaleForDPR (scaleForDPR)
 
 setup ∷ ∀ m. MonadCanvasAction m ⇒ m Unit
 setup = setImageSmoothing false

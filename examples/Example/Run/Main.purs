@@ -1,4 +1,4 @@
-module Test.Run.Main where
+module Example.Run.Main where
 
 import Prelude
 
@@ -12,7 +12,7 @@ import Graphics.CanvasAction (fillRect, launchCanvasAff_, setFillStyle)
 import Graphics.CanvasAction.Run (CTX, runBaseCanvasAff')
 import Run (EFFECT, Run)
 import Run.Except (FAIL, fail, runFail)
-import Test.ScaleForDPR (scaleForDPR)
+import Example.ScaleForDPR (scaleForDPR)
 import Type.Row (type (+))
 import Web.HTML (window)
 import Web.HTML.Window (confirm)

@@ -1,10 +1,10 @@
-let conf = ./spago.dhall
+let main = ./spago.dhall
 
-in conf //
-  { dependencies = conf.dependencies #
+in main //
+  { dependencies = main.dependencies #
     [ "integers"
     , "psci-support"
     , "web-cssom"
     ]
-  , sources = conf.sources # [ "test/**/*.purs" ]
+  , sources = main.sources # [ "examples/**/*.purs" ]
   }

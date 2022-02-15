@@ -1,4 +1,4 @@
-const Main = require("../../../output/Test.Run.Main");
+const Main = require("../../../output/Example.Pattern.Main");
 
 const green = "#6f7";
 const blue = "#67f";

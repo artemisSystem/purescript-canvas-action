@@ -1,4 +1,4 @@
-module Test.TransformPath.Main where
+module Example.TransformPath.Main where
 
 import Prelude
 
@@ -12,7 +12,7 @@ import Graphics.CanvasAction (class CanvasStyle, class MonadCanvasAction, Contex
 import Graphics.CanvasAction.Path (FillRule(..), PathAction, arcBy_, fill, moveTo, runPath, stroke)
 import Graphics.CanvasAction.Transformation (rotate, transform, transformedBy, translate)
 import Math (tau)
-import Test.ScaleForDPR (scaleForDPR)
+import Example.ScaleForDPR (scaleForDPR)
 
 centeredRect ∷ Vector2 Number → Vector2 Number → Rect Number
 centeredRect center size = Rect pos size

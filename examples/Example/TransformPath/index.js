@@ -1,4 +1,4 @@
-const Main = require("../../../output/Test.TransformPath.Main");
+const Main = require("../../../output/Example.TransformPath.Main");
 
 const green = "#6f7";
 const blue = "#67f";

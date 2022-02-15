@@ -172,7 +172,7 @@ createCanvas' doc size = liftEffect do
   C.setCanvasDimensions (coerceHTMLCanvas canvas) { width, height }
   pure canvas
 
--- | Create an `HTMLCanvasElement` of the given size in any `MonadCanvasAction`
+-- | Create an `HTMLCanvasElement` of the given size in any `MonadEffect`
 createCanvas ∷ ∀ m s. MonadEffect m ⇒ ToSize Number s ⇒ s → m HTMLCanvasElement
 createCanvas s = do
   doc ← liftEffect (window >>= document)

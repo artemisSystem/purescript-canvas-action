@@ -1,4 +1,4 @@
-module Test.SemigroupDo where
+module Example.SemigroupDo where
 
 import Prelude
 
