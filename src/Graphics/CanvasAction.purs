@@ -41,6 +41,7 @@ module Graphics.CanvasAction
   , toStyleRep
   , class CanvasColor
   , toColorRep
+  , toStyleRepDefault
 
   , setFillStyle
   , setStrokeStyle
@@ -406,14 +407,14 @@ instance CanvasStyle CanvasPattern where
   toStyleRep = (unsafeCoerce ∷ CanvasPattern → CanvasStyleRep)
 
 instance CanvasStyle String where
-  toStyleRep = (unsafeCoerce ∷ String → CanvasStyleRep)
+  toStyleRep = toStyleRepDefault
 
 instance CanvasStyle Color where
-  toStyleRep = toColorRep >>> (unsafeCoerce ∷ String → CanvasStyleRep)
+  toStyleRep = toStyleRepDefault
 
 -- | Class describing types that can be turned into a string representing a
 -- | canvas color.
-class CanvasColor color where
+class CanvasStyle color ⇐ CanvasColor color where
   toColorRep ∷ color → String
 
 instance CanvasColor String where
@@ -421,6 +422,10 @@ instance CanvasColor String where
 
 instance CanvasColor Color where
   toColorRep = cssStringRGBA
+
+-- | A default implementation of `toStyleRep` using `toColorRep`.
+toStyleRepDefault ∷ ∀ color. CanvasColor color ⇒ color → CanvasStyleRep
+toStyleRepDefault = toColorRep >>> (unsafeCoerce ∷ String → CanvasStyleRep)
 
 foreign import setFillStyleImpl ∷ Context2D → CanvasStyleRep → Effect Unit
 

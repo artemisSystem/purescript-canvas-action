@@ -5,6 +5,16 @@ All notable changes to this project will (hopefully) be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v8.0.0] - 2022-02-16
+
+### Breaking Changes
+
+- Made `CanvasColor` a subclass of `CanvasStyle`.
+
+### Additions
+
+- Added `toStyleRepDefault`.
+
 ## [v7.0.0] - 2021-05-29
 
 ### Breaking Changes
