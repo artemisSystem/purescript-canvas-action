@@ -31,8 +31,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Graphics.Canvas as C
 import Graphics.CanvasAction (class MonadCanvasAction, Context2D, getCtx)
-import Math (Radians)
-import Math as Math
+import Data.Number as Number
 
 foreign import data DOMMatrix ∷ Type
 
@@ -58,8 +57,7 @@ type DOMMatrixRecord =
   }
 
 toTransform ∷ DOMMatrix → C.Transform
-toTransform = toRecord >>> \{ a, b, c, d, e, f } →
-  { m11: a, m12: b, m21: c, m22: d, m31: e, m32: f }
+toTransform = toRecord
 
 foreign import multiplyDOMMatrix ∷ DOMMatrix → DOMMatrix → DOMMatrix
 
@@ -122,14 +120,14 @@ scale ∷ Number → Number → DOMMatrix
 scale sx sy = fromNumbers sx 0.0 0.0 sy 0.0 0.0
 
 -- | Constructs a DOMMatrix that applies a rotation
-rotate ∷ Radians → DOMMatrix
+rotate ∷ Number → DOMMatrix
 rotate theta = fromNumbers cos sin (-sin) cos 0.0 0.0
   where
-  sin = Math.sin theta
-  cos = Math.cos theta
+  sin = Number.sin theta
+  cos = Number.cos theta
 
 -- | Constructs a DOMMatrix that applies a rotation around the specified point
-rotateAround ∷ ∀ p. ToPos Number p ⇒ p → Radians → DOMMatrix
+rotateAround ∷ ∀ p. ToPos Number p ⇒ p → Number → DOMMatrix
 rotateAround pos theta = translate x y <> rotate theta <> translate (-x) (-y)
   where
   (x >< y) = toPos pos

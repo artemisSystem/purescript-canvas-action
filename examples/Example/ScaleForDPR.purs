@@ -58,8 +58,8 @@ setCanvasCSSSize (w >< h) = do
   liftEffect do
     canvasStyle ←
       (CSS.style <<< CSS.fromHTMLElement) (CanvasElem.toHTMLElement canvas)
-    CSS.setProperty canvasStyle "width" (show w <> "px")
-    CSS.setProperty canvasStyle "height" (show h <> "px")
+    CSS.setProperty "width" (show w <> "px") canvasStyle
+    CSS.setProperty "height" (show h <> "px") canvasStyle
 
 -- | Scales canvas when devicePixelRatio changes, and runs a `MonadCanvasAff`
 -- | after. Infinite loop. Sets CSS size once first. Also see `scaleForDPROnce`.

@@ -8,7 +8,6 @@
   , "either"
   , "exceptions"
   , "foldable-traversable"
-  , "math"
   , "maybe"
   , "numbers"
   , "polymorphic-vectors"

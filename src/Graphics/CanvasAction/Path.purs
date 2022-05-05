@@ -45,7 +45,7 @@ import Control.Apply (lift2)
 import Data.Array (fromFoldable, uncons)
 import Data.Foldable (class Foldable, any, traverse_)
 import Data.Maybe (Maybe(..))
-import Data.Number (isFinite, isNaN)
+import Data.Number (isFinite, isNaN, cos, sin, tau)
 import Data.Tuple (Tuple(..))
 import Data.Vector.Polymorphic (Vector2, convertRegion, length, (><))
 import Data.Vector.Polymorphic.Class (class ToPos, class ToRegion, toPos)
@@ -54,7 +54,6 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Graphics.Canvas (Context2D, Rectangle)
 import Graphics.CanvasAction (class CanvasStyle, class MonadCanvasAction, filled, getCtx, stroked)
 import Graphics.CanvasAction.Transformation (DOMMatrix, rotate, toRecord, transformPoint, translate)
-import Math (Radians, cos, sin, tau)
 
 -- | A JavaScript `Path2D` Object
 foreign import data JsPath2D ∷ Type
@@ -78,8 +77,8 @@ foreign import ellipseImpl
   → Number
   → Number
   → Number
-  → Radians
-  → Radians
+  → Number
+  → Number
   → Boolean
   → JsPath2D
   → Effect Unit
@@ -285,9 +284,9 @@ ellipse
   ⇒ p
   → Number
   → Number
-  → Radians
-  → Radians
-  → Radians
+  → Number
+  → Number
+  → Number
   → Boolean
   → PathAction Unit
 ellipse center radiusX radiusY rotation startAngle endAngle anticlockwise =
@@ -317,8 +316,8 @@ arc
   . ToPos Number p
   ⇒ p
   → Number
-  → Radians
-  → Radians
+  → Number
+  → Number
   → Boolean
   → PathAction Unit
 arc center radius = ellipse center radius radius 0.0

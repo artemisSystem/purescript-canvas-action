@@ -11,7 +11,7 @@ import Effect.Exception (throw)
 import Graphics.CanvasAction (class CanvasStyle, class MonadCanvasAction, Context2D, filled, getCanvasElementById, getContext2D, launchCanvasAff_, setGlobalAlpha, setLineWidth)
 import Graphics.CanvasAction.Path (FillRule(..), PathAction, arcBy_, fill, moveTo, runPath, stroke)
 import Graphics.CanvasAction.Transformation (rotate, transform, transformedBy, translate)
-import Math (tau)
+import Data.Number (tau)
 import Example.ScaleForDPR (scaleForDPR)
 
 centeredRect ∷ Vector2 Number → Vector2 Number → Rect Number

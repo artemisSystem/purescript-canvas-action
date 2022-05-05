@@ -5,6 +5,12 @@ All notable changes to this project will (hopefully) be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v9.0.0] - 2022-05-05
+
+### Breaking Changes
+
+- Update to PureScript 0.15
+
 ## [v8.0.0] - 2022-02-16
 
 ### Breaking Changes

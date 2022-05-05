@@ -111,7 +111,9 @@ instance MonadCanvasAff CanvasAff where
   liftCanvasAff = identity
 
 else instance
-  MonadCanvasAff m ⇒
+  ( MonadCanvasAction (ReaderT r m)
+  , MonadCanvasAff m
+  ) ⇒
   MonadCanvasAff (ReaderT r m) where
   liftCanvasAff = lift <<< liftCanvasAff
 

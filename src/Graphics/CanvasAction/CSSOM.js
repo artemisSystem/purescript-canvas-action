@@ -1,4 +1,4 @@
-exports.devicePixelRatioImpl = () => window.devicePixelRatio;
+export const devicePixelRatioImpl = () => window.devicePixelRatio;
 
-exports.matchMedia = mediaQueryString => () =>
+export const matchMedia = mediaQueryString => () =>
   window.matchMedia(mediaQueryString);

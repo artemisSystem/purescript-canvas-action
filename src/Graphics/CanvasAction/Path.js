@@ -1,22 +1,22 @@
-exports.addPathImpl = path2 => matrix => path1 => () =>
+export const addPathImpl = path2 => matrix => path1 => () =>
   void path1.addPath(path2, matrix);
 
-exports.closePathImpl = path => () => void path.closePath();
+export const closePathImpl = path => () => void path.closePath();
 
-exports.moveToImpl = x => y => path => () => void path.moveTo(x, y);
+export const moveToImpl = x => y => path => () => void path.moveTo(x, y);
 
-exports.lineToImpl = x => y => path => () => void path.lineTo(x, y);
+export const lineToImpl = x => y => path => () => void path.lineTo(x, y);
 
-exports.bezierCurveToImpl = cp1x => cp1y => cp2x => cp2y => x => y =>
+export const bezierCurveToImpl = cp1x => cp1y => cp2x => cp2y => x => y =>
   path => () => void path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
 
-exports.quadraticCurveToImpl = cpx => cpy => x => y =>
+export const quadraticCurveToImpl = cpx => cpy => x => y =>
   path => () => void path.quadraticCurveTo(cpx, cpy, x, y);
 
-exports.arcToImpl = x1 => y1 => x2 => y2 => radius => path => () =>
+export const arcToImpl = x1 => y1 => x2 => y2 => radius => path => () =>
   void path.arcTo(x1, y1, x2, y2, radius);
 
-exports.ellipseImpl = x => y => radiusX => radiusY => rotation => startAngle =>
+export const ellipseImpl = x => y => radiusX => radiusY => rotation => startAngle =>
   endAngle => anticlockwise => path => () => void path.ellipse(
     x, y,
     radiusX, radiusY,
@@ -25,16 +25,16 @@ exports.ellipseImpl = x => y => radiusX => radiusY => rotation => startAngle =>
     anticlockwise
   );
 
-exports.rectImpl = x => y => width => height => path => () =>
+export const rectImpl = x => y => width => height => path => () =>
   void path.rect(x, y, width, height)
 
 
-exports.newPath2DImpl = () => new Path2D();
+export const newPath2DImpl = () => new Path2D();
 
-exports.fillImpl = ctx => path => fillRule => () =>
+export const fillImpl = ctx => path => fillRule => () =>
   void ctx.fill(path, fillRule);
 
-exports.strokeImpl = ctx => path => () => void ctx.stroke(path);
+export const strokeImpl = ctx => path => () => void ctx.stroke(path);
 
-exports.clipImpl = ctx => path => fillRule => () =>
+export const clipImpl = ctx => path => fillRule => () =>
   void ctx.clip(path, fillRule);

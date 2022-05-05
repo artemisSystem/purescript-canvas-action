@@ -1,21 +1,21 @@
-exports.styleIsString = style => typeof style == "string";
+export const styleIsString = style => typeof style == "string";
 
-exports.styleIsGradient = style => style instanceof CanvasGradient;
+export const styleIsGradient = style => style instanceof CanvasGradient;
 
-exports.styleIsPattern = style => style instanceof CanvasGradient;
+export const styleIsPattern = style => style instanceof CanvasGradient;
 
-exports.getCanvasEffect = ctx => () => ctx.canvas;
+export const getCanvasEffect = ctx => () => ctx.canvas;
 
-exports.setFillStyleImpl = ctx => style => () => void (ctx.fillStyle = style);
+export const setFillStyleImpl = ctx => style => () => void (ctx.fillStyle = style);
 
-exports.setStrokeStyleImpl = ctx => style => () =>
+export const setStrokeStyleImpl = ctx => style => () =>
   void (ctx.strokeStyle = style);
 
-exports.getFillStyleImpl = ctx => () => ctx.fillStyle;
+export const getFillStyleImpl = ctx => () => ctx.fillStyle;
 
-exports.getStrokeStyleImpl = ctx => () => ctx.strokeStyle;
+export const getStrokeStyleImpl = ctx => () => ctx.strokeStyle;
 
-exports.setImageSmoothingImpl = ctx => bool => () => void
+export const setImageSmoothingImpl = ctx => bool => () => void
   (ctx.imageSmoothingEnabled = bool);
 
-exports.getImageSmoothingImpl = ctx => () => ctx.imageSmoothingEnabled;
+export const getImageSmoothingImpl = ctx => () => ctx.imageSmoothingEnabled;
